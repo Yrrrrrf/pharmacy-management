@@ -1,0 +1,10 @@
+# Server
+uvicorn==0.30.6
+
+# API
+fastapi==0.112.1
+crud-forge==0.1.6
+
+# For testing
+pytest==8.3.2
+requests==2.32.3

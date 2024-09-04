@@ -1,0 +1,135 @@
+### Academic Hub API Testing - Specific Requests
+### This file contains GET requests for retrieving specific records from various endpoints of the Academic Hub API.
+
+--------------------- Infrastructure Management ---------------------
+
+### Get specific Faculty
+# Retrieves details of a specific faculty by its ID
+GET http://localhost:8000/infrastructure/faculty?id=f1b0a112-9e88-4d1e-87a7-a5a6e6e73c3f HTTP/1.1
+
+### Expected Response:
+# {
+#   "id": "f1b0a112-9e88-4d1e-87a7-a5a6e6e73c3f",
+#   "name": "Engineering Faculty"
+# }
+
+### Get specific Building
+# Retrieves details of a specific building by its ID
+GET http://localhost:8000/infrastructure/building?id=a1b2c3d4-e5f6-4a5b-8c7d-9e0f1a2b3c4d HTTP/1.1
+
+### Expected Response:
+# {
+#   "id": "a1b2c3d4-e5f6-4a5b-8c7d-9e0f1a2b3c4d",
+#   "name": "Engineering Building A",
+#   "address": "123 University Ave",
+#   "total_floors": 5
+# }
+
+### Get specific Faculty-Building Association
+# Retrieves a specific association between a faculty and a building
+GET http://localhost:8000/infrastructure/faculty_building?faculty_id=f1b0a112-9e88-4d1e-87a7-a5a6e6e73c3f&building_id=a1b2c3d4-e5f6-4a5b-8c7d-9e0f1a2b3c4d HTTP/1.1
+
+### Expected Response:
+# {
+#   "faculty_id": "f1b0a112-9e88-4d1e-87a7-a5a6e6e73c3f",
+#   "building_id": "a1b2c3d4-e5f6-4a5b-8c7d-9e0f1a2b3c4d"
+# }
+
+### Get specific Library
+# Retrieves details of a specific library by its ID
+GET http://localhost:8000/infrastructure/library?id=f47ac10b-58cc-4372-a567-0e02b2c3d479 HTTP/1.1
+
+### Expected Response:
+# {
+#   "id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+#   "name": "Engineering Library",
+#   "faculty_id": "f1b0a112-9e88-4d1e-87a7-a5a6e6e73c3f",
+#   "building_id": "b2c3d4e5-f6a7-4b5c-9d0e-1f2a3b4c5d6e"
+# }
+
+--------------------- Academic Management ---------------------
+
+### Get specific Program
+# Retrieves details of a specific academic program by its ID
+GET http://localhost:8000/academic/program?id=3b5a8e6f-726d-4b8a-9a6c-8a5b6f8d7e9c HTTP/1.1
+
+### Expected Response:
+# {
+#   "id": "3b5a8e6f-726d-4b8a-9a6c-8a5b6f8d7e9c",
+#   "code": "ME",
+#   "name": "Mechanical Engineering",
+#   "description": "Study of mechanical systems and their design",
+#   "degree_level": "Bachelor"
+# }
+
+--------------------- Student Management ---------------------
+
+### Get specific Student
+# Retrieves details of a specific student by their ID
+GET http://localhost:8000/student/student?id=5e6f7a8b-9c0d-4e5f-6a7b-8c9d0e1f2a3b HTTP/1.1
+
+### Expected Response:
+# {
+#   "id": "5e6f7a8b-9c0d-4e5f-6a7b-8c9d0e1f2a3b",
+#   "first_name": "John",
+#   "last_name": "Doe",
+#   "enrollment_date": "2023-09-01",
+#   "program_id": "3b5a8e6f-726d-4b8a-9a6c-8a5b6f8d7e9c"
+# }
+
+--------------------- Library Management ---------------------
+
+### Get specific Author
+# Retrieves details of a specific author by their ID
+GET http://localhost:8000/library/author?id=a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d HTTP/1.1
+
+### Expected Response:
+# {
+#   "id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+#   "name": "John D. Anderson"
+# }
+
+### Get specific Publisher
+# Retrieves details of a specific publisher by its ID
+GET http://localhost:8000/library/publisher?id=f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f8a9b0c HTTP/1.1
+
+### Expected Response:
+# {
+#   "id": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f8a9b0c",
+#   "name": "McGraw-Hill Education"
+# }
+
+### Get specific Book
+# Retrieves details of a specific book by its ID
+GET http://localhost:8000/library/book?id=e1f2a3b4-c5d6-4e7f-8a9b-0c1d2e3f4a5b HTTP/1.1
+
+### Expected Response:
+# {
+#   "id": "e1f2a3b4-c5d6-4e7f-8a9b-0c1d2e3f4a5b",
+#   "title": "Fundamentals of Aerodynamics",
+#   "publisher_id": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f8a9b0c",
+#   "isbn": "9780073398105",
+#   "publication_year": 2016
+# }
+
+### Get specific Book-Author Association
+# Retrieves a specific association between a book and an author
+GET http://localhost:8000/library/book_author?book_id=e1f2a3b4-c5d6-4e7f-8a9b-0c1d2e3f4a5b&author_id=a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d HTTP/1.1
+
+### Expected Response:
+# {
+#   "book_id": "e1f2a3b4-c5d6-4e7f-8a9b-0c1d2e3f4a5b",
+#   "author_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"
+# }
+
+### Get specific Book Copy
+# Retrieves details of a specific book copy by its ID
+GET http://localhost:8000/library/book_copy?id=d6e7f8a9-b0c1-4d2e-3f4a-5b6c7d8e9f0a HTTP/1.1
+
+### Expected Response:
+# {
+#   "id": "d6e7f8a9-b0c1-4d2e-3f4a-5b6c7d8e9f0a",
+#   "book_id": "e1f2a3b4-c5d6-4e7f-8a9b-0c1d2e3f4a5b",
+#   "library_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+#   "status": "available"
+# }

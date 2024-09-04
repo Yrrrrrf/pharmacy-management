@@ -1,0 +1,54 @@
+### Academic Hub API Testing - Get All Requests
+### This file contains GET requests for retrieving all records from various endpoints of the Academic Hub API.
+
+--------------------- Infrastructure Management ---------------------
+
+### Get all Faculties
+# Retrieves a list of all faculties in the institution
+GET http://localhost:8000/infrastructure/faculty HTTP/1.1
+
+### Get all Buildings
+# Retrieves a list of all buildings in the institution
+GET http://localhost:8000/infrastructure/building HTTP/1.1
+
+### Get all Faculty-Building Associations
+# Retrieves all associations between faculties and buildings
+GET http://localhost:8000/infrastructure/faculty_building HTTP/1.1
+
+### Get all Libraries
+# Retrieves a list of all libraries in the institution
+GET http://localhost:8000/infrastructure/library HTTP/1.1
+
+--------------------- Academic Management ---------------------
+
+### Get all Programs
+# Retrieves a list of all academic programs offered by the institution
+GET http://localhost:8000/academic/program HTTP/1.1
+
+--------------------- Student Management ---------------------
+
+### Get all Students
+# Retrieves a list of all students enrolled in the institution
+GET http://localhost:8000/student/student HTTP/1.1
+
+--------------------- Library Management ---------------------
+
+### Get all Authors
+# Retrieves a list of all authors of books in the library
+GET http://localhost:8000/library/author HTTP/1.1
+
+### Get all Publishers
+# Retrieves a list of all publishers of books in the library
+GET http://localhost:8000/library/publisher HTTP/1.1
+
+### Get all Books
+# Retrieves a list of all books in the library
+GET http://localhost:8000/library/book HTTP/1.1
+
+### Get all Book-Author Associations
+# Retrieves all associations between books and their authors
+GET http://localhost:8000/library/book_author HTTP/1.1
+
+### Get all Book Copies
+# Retrieves a list of all physical copies of books in the library
+GET http://localhost:8000/library/book_copy HTTP/1.1
