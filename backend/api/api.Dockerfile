@@ -14,14 +14,14 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Add some environment variables
-ENV DB_NAME='pharmacy_management'
-
 # * ENV
-    # * Use host.docker.internal to connect to the host machine
-    ENV DB_HOST='host.docker.internal'
-    # * some docker networking magic
-    # ENV DB_HOST='pharmacy-hub-net'
+ENV DB_NAME='pharmacy_management'
+# # * Use host.docker.internal to connect to the host machine
+# ENV DB_HOST='host.docker.internal'
+# * some docker networking magic
+# this must be the name of the service in the docker-compose file
+# in this case is the name of the db service (container)
+ENV DB_HOST='pharma-hub-db'
 
 ENV DB_OWNER_ADMIN='pharmacy_management_owner'
 ENV DB_OWNER_PWORD='secure_pharmacy_pwd'
