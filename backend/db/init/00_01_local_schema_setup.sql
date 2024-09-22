@@ -84,26 +84,32 @@ $$ LANGUAGE plpgsql;
 
 
 -- Create schemas
-SELECT create_schemas(ARRAY[
+DO $$
+BEGIN
+  RAISE NOTICE 'Starting schema creation...';
+  PERFORM create_schemas(ARRAY[
     -- * main schemas
     'pharma',       -- For pharmaceutical-specific information
-    'inventory',    -- For managing stock levels and product information
-    'sales',        -- For processing transactions and financial records
+    'management',    -- For managing stock levels and product information
 
-    -- * 
+    -- * aux schemas
     'customer',     -- For managing customer profiles and histories
-    'auth',         -- For user authentication and authorization
-    'prescription'  -- For handling prescription-related data
-]);
+    'auth'         -- For user authentication and authorization
+  ]);
+  RAISE NOTICE 'Schema creation completed.';
+EXCEPTION WHEN OTHERS THEN
+  RAISE NOTICE 'Error creating schemas: %', SQLERRM;
+  RAISE;
+END $$;
 
 -- * Create roles and grant privileges for each schema
 -- * Note: Change the passwords and schema access as needed
--- SELECT create_and_grant_role(
---     'inventory_admin',
---     'inv_password',
---     ARRAY['inventory'],
---     ARRAY['pharma', 'sales']
--- );
+SELECT create_and_grant_role(
+    'some_admin',
+    'some_password',
+    ARRAY['pharma', 'management', 'customer'],
+    ARRAY['auth']
+);
 
 -- SELECT create_and_grant_role(
 --     'sales_admin',

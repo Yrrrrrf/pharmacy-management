@@ -1,0 +1,2 @@
+-- 04_customer.sql
+-- Add also the prescription data to the customer schema

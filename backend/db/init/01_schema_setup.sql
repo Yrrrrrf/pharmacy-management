@@ -98,12 +98,11 @@ $$ LANGUAGE plpgsql;
 SELECT create_schemas(ARRAY[
     -- * main schemas
     'pharma',       -- For pharmaceutical-specific information
-    'inventory',    -- For managing stock levels and product information
-    'sales',        -- For processing transactions and financial records
-    -- * auxiliary schemas
+    'management',    -- For managing stock levels and product information
+
+    -- * additional schemas
     'customer',     -- For managing customer profiles and histories
-    'auth',         -- For user authentication and authorization
-    'prescription'  -- For handling prescription-related data
+    'auth'         -- For user authentication and authorization
 ]);
 
 -- todo: Remove this comment's block
