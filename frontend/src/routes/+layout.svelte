@@ -7,11 +7,8 @@
     import UrlDisplay from '$lib/components/URLDisplay.svelte';
 
     const services = [
-        { name: 'School', href: '/school' },
-        { name: 'Academic', href: '/academic' },
-        { name: 'Library', href: '/library' },
-        { name: 'Infrastructure', href: '/infrastructure' },
-        { name: 'HR', href: '/hr' },
+        { name: 'Dashboard', href: '/dashboard' },
+        { name: 'Store', href: '/store' },
     ];
 
     let bgImg = '';
@@ -27,7 +24,8 @@
     $: parallaxY = $parallaxIntensity * -0.2;
 
     onMount(() => {
-        bgImg = `academic/school-0${Math.floor(Math.random() * 4) + 1}.jpg`;
+        // bgImg = `pharma/pharmacy-0${Math.floor(Math.random() * 4) + 1}.jpg`;
+        bgImg = `pharma/pharmacy-00.jpg`;
     });
 
     afterUpdate(() => {
@@ -42,7 +40,16 @@
     });
 </script>
 
-<svelte:window bind:scrollY bind:innerHeight bind:innerWidth />
+<svelte:window
+    bind:scrollY
+    bind:innerHeight
+    bind:innerWidth
+/>
+
+<svelte:head>
+    <title>Pharmacy Management</title>
+</svelte:head>
+
 
 <div class="flex flex-col min-h-screen bg-base-200 relative overflow-hidden">
     <div 
@@ -75,7 +82,7 @@
                 in:fly="{{ y: 50, duration: 1000, delay: 900 }}"
             >
                 <div class="container mx-auto px-4 py-6 text-center">
-                    <p>&copy; 2024 Academic Hub. All rights reserved.</p>
+                    <p>&copy; 2024 Pharmacy Hub. All rights reserved.</p>
                 </div>
             </footer>
         {/if}

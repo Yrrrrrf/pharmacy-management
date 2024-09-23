@@ -1,5 +1,5 @@
 -- File: 01_schema_setup.sql
---     Sets up schemas and roles for the Academic Hub database.
+--     Sets up schemas and roles for the Pharmacy Management System.
 --
 -- # Purpose:
 --     This file defines the schema structure for a comprehensive pharmacy management system.

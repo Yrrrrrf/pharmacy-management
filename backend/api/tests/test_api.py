@@ -1,7 +1,7 @@
 """
 test_api.py
 
-This module contains automated tests for the Academic Hub API endpoints.
+This module contains automated tests for the API endpoints.
 It reads test cases from an HTTP file and executes them using pytest.
 
 The module uses the requests library to make HTTP calls and pytest for the test framework.

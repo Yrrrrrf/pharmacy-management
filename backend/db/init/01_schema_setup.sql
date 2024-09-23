@@ -1,12 +1,5 @@
 -- File: 01_schema_setup.sql
---     Sets up schemas and roles for the Academic Hub database.
---
--- # Purpose:
---     This script creates the necessary schemas for the Academic Hub system and sets up
---     appropriate roles with specific permissions for each schema. It establishes the
---     foundational structure for managing various aspects of an academic institution,
---     from infrastructure and HR to academic programs and student management.
---
+--    Sets up schemas and roles for the Pharmacy Management System.
 -- # Script steps:
 --     1. Creates specified schemas with a logical structure
 --     2. Creates roles with appropriate permissions

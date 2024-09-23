@@ -1,5 +1,4 @@
 # /backend/db/db.Dockerfile
-# Dockerfile for Academic Hub Database
 FROM postgres:16
 
 # Set environment variables for database configuration

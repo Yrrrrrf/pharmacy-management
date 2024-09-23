@@ -22,7 +22,7 @@
 </script>
 
 <svelte:head>
-    <title>Academic Hub - Manage</title>
+    <title>Pharmacy Management - Manage</title>
 </svelte:head>
 
 <div class="container mx-auto p-4">

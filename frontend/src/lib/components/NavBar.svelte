@@ -37,7 +37,7 @@
         <div class="flex justify-between items-center">
             <!-- TODO: Add logo slot here -->
             <a href="/" class="flex items-center space-x-2">
-                <span class="text-xl font-bold">Academic Hub</span>
+                <span class="text-xl font-bold"> Pharmacy Management</span>
             </a>
 
             <div class="flex items-center space-x-4">

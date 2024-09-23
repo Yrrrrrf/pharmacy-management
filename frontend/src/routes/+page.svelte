@@ -21,7 +21,7 @@
             icon: '🎨', 
             title: 'User-friendly Interface', 
             description: 'Intuitive design for enhanced user experience.',
-            route: '/academic'
+            route: '/dashboard'
         },
         {   
             icon: '📊', 
@@ -47,7 +47,7 @@
 </script>
 
 <div class="text-center mb-16" in:fade={{ duration: 1000 }}>
-    <h1 class="text-5xl font-extrabold text-primary mb-4">Welcome to Academic Hub</h1>
+    <h1 class="text-5xl font-extrabold text-primary mb-4">Welcome to  Pharmacy Management</h1>
     <p class="text-2xl text-secondary font-light">Empowering educational institutions with cutting-edge data management</p>
 </div>
 
