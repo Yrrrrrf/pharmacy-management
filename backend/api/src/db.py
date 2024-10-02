@@ -37,7 +37,7 @@ def gen_schema_routes(schema: str, db_manager: DBForge, router: APIRouter) -> AP
         include_schemas=[schema],
         # exclude_tables=["some-table"],
     )
-    api_forge.genr_crud()
+    api_forge.genr_crud()  # * Generate the CRUD routes (for the schema)
     api_forge.p_schemas(schemas=[schema])
     return router
 

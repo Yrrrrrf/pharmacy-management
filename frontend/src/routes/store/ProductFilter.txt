@@ -1,0 +1,262 @@
+import React, { useState } from 'react'
+import { Search, X, Pill, Droplet, ShoppingBag, Stethoscope, Zap, Flask, Syringe, Clock, DollarSign, Percent, Calendar } from 'lucide-react'
+
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Slider } from "@/components/ui/slider"
+
+type FilterOption = {
+  id: string
+  label: string
+  options: string[]
+  icon: React.ReactNode
+}
+
+const pharmaceuticalFilters: FilterOption[] = [
+  { id: 'drug_type', label: 'Drug Type', options: ['Generic', 'Brand Name', 'OTC', 'Prescription'], icon: <Pill className="w-4 h-4" /> },
+  { id: 'drug_nature', label: 'Drug Nature', options: ['Allopathic', 'Homeopathic', 'Ayurvedic'], icon: <Droplet className="w-4 h-4" /> },
+  { id: 'pathology', label: 'Pathology', options: ['Pain', 'Inflammation', 'Bacterial Infections', 'Viral Infections', 'Allergies'], icon: <Stethoscope className="w-4 h-4" /> },
+  { id: 'effect', label: 'Effect', options: ['Analgesic', 'Anti-inflammatory', 'Antibiotic', 'Antiviral', 'Antihistamine'], icon: <Zap className="w-4 h-4" /> },
+  { id: 'commercialization', label: 'Commercialization', options: ['Over the Counter', 'Prescription Only', 'Controlled Substance'], icon: <ShoppingBag className="w-4 h-4" /> },
+]
+
+const pharmaProductFilters: FilterOption[] = [
+  { id: 'pharmaceutic_form', label: 'Pharmaceutic Form', options: ['Tablet', 'Capsule', 'Syrup', 'Injection', 'Cream'], icon: <Flask className="w-4 h-4" /> },
+  { id: 'usage_consideration', label: 'Usage Consideration', options: ['With Food', 'Without Food', 'Before Sleep', 'Morning'], icon: <Clock className="w-4 h-4" /> },
+  { id: 'administration_route', label: 'Administration Route', options: ['Oral', 'Topical', 'Intravenous', 'Intramuscular', 'Subcutaneous'], icon: <Syringe className="w-4 h-4" /> },
+]
+
+export default function ProductFilter() {
+  const [searchTerm, setSearchTerm] = useState('')
+  const [activeFilters, setActiveFilters] = useState<Record<string, string>>({})
+  const [priceRange, setPriceRange] = useState([0, 1000])
+  const [concentration, setConcentration] = useState('')
+  const [concentrationUnit, setConcentrationUnit] = useState('')
+  const [expirationDate, setExpirationDate] = useState('')
+
+  const handleFilterChange = (filterId: string, value: string) => {
+    setActiveFilters(prev => ({
+      ...prev,
+      [filterId]: value
+    }))
+  }
+
+  const clearFilters = () => {
+    setActiveFilters({})
+    setSearchTerm('')
+    setPriceRange([0, 1000])
+    setConcentration('')
+    setConcentrationUnit('')
+    setExpirationDate('')
+  }
+
+  const renderFilterSection = (title: string, filters: FilterOption[]) => (
+    <div className="mb-6">
+      <h3 className="text-lg font-semibold mb-3 text-primary">{title}</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-4 rounded-lg shadow-inner">
+        {filters.map((filter) => (
+          <div key={filter.id} className="flex items-center space-x-2">
+            <label htmlFor={filter.id} className="text-sm font-medium text-gray-700 w-1/3 flex items-center">
+              {filter.icon}
+              <span className="ml-2">{filter.label}:</span>
+            </label>
+            <Select 
+              onValueChange={(value) => handleFilterChange(filter.id, value)} 
+              value={activeFilters[filter.id] || ''}
+              className="w-2/3"
+            >
+              <SelectTrigger id={filter.id}>
+                <SelectValue placeholder={`Select ${filter.label}`} />
+              </SelectTrigger>
+              <SelectContent>
+                {filter.options.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ))}
+        {title === "Pharma Product" && (
+          <div className="col-span-2 flex items-center space-x-2">
+            <label htmlFor="concentration" className="text-sm font-medium text-gray-700 w-1/3 flex items-center">
+              <Percent className="w-4 h-4 mr-2" />
+              Concentration:
+            </label>
+            <div className="w-2/3 flex space-x-2">
+              <Input
+                id="concentration"
+                type="text"
+                placeholder="e.g., 500"
+                value={concentration}
+                onChange={(e) => setConcentration(e.target.value)}
+                className="w-2/3"
+              />
+              <Select 
+                onValueChange={setConcentrationUnit} 
+                value={concentrationUnit}
+                className="w-1/3"
+              >
+                <SelectTrigger id="concentration-unit">
+                  <SelectValue placeholder="Unit" />
+                </SelectTrigger>
+                <SelectContent>
+                  {['mg', 'mL', 'µg', 'g', 'IU'].map((unit) => (
+                    <SelectItem key={unit} value={unit}>
+                      {unit}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+
+  return (
+    <div className="w-full max-w-4xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden border-2 border-primary">
+      <div className="bg-primary text-primary-foreground p-4 text-center font-bold text-lg flex items-center justify-center">
+        <Pill className="w-6 h-6 mr-2" />
+        Pharmaceutical Product Filter
+      </div>
+      <div className="p-6 bg-gradient-to-b from-primary/10 to-background">
+        <div className="mb-4 flex items-center space-x-2">
+          <div className="relative flex-grow">
+            <Input
+              type="text"
+              placeholder="Search products..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 pr-4 py-2 w-full rounded-full border-2 border-primary focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-primary" />
+          </div>
+          <Button 
+            onClick={clearFilters}
+            variant="outline"
+            className="rounded-full border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+          >
+            <X className="w-4 h-4 mr-2" />
+            Clear Filters
+          </Button>
+        </div>
+
+        {renderFilterSection("Pharmaceutical", pharmaceuticalFilters)}
+        {renderFilterSection("Pharma Product", pharmaProductFilters)}
+
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold mb-3 text-primary">Product Specific</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-4 rounded-lg shadow-inner">
+            <div className="col-span-2">
+              <label className="text-sm font-medium text-gray-700 flex items-center mb-2">
+                <DollarSign className="w-4 h-4 mr-2" />
+                Price Range:
+              </label>
+              <Slider
+                min={0}
+                max={1000}
+                step={10}
+                value={priceRange}
+                onValueChange={setPriceRange}
+                className="mb-2"
+              />
+              <div className="flex justify-between text-sm text-gray-600">
+                <span>${priceRange[0]}</span>
+                <span>${priceRange[1]}</span>
+              </div>
+            </div>
+            <div>
+              <label htmlFor="expiration-date" className="text-sm font-medium text-gray-700 flex items-center mb-2">
+                <Calendar className="w-4 h-4 mr-2" />
+                Expiration Date:
+              </label>
+              <Input
+                id="expiration-date"
+                type="date"
+                value={expirationDate}
+                onChange={(e) => setExpirationDate(e.target.value)}
+                className="w-full"
+              />
+            </div>
+          </div>
+        </div>
+
+        {(Object.keys(activeFilters).length > 0 || searchTerm || concentration || concentrationUnit || expirationDate || priceRange[0] !== 0 || priceRange[1] !== 1000) && (
+          <div className="mt-4 p-4 bg-secondary rounded-lg">
+            <h3 className="text-sm font-semibold mb-2 flex items-center">
+              <Stethoscope className="w-4 h-4 mr-2" />
+              Active Filters:
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {searchTerm && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-full bg-background text-primary hover:bg-primary hover:text-primary-foreground"
+                  onClick={() => setSearchTerm('')}
+                >
+                  Search: {searchTerm} ✕
+                </Button>
+              )}
+              {Object.entries(activeFilters).map(([filterId, value]) => (
+                <Button
+                  key={`${filterId}-${value}`}
+                  variant="outline"
+                  size="sm"
+                  className="rounded-full bg-background text-primary hover:bg-primary hover:text-primary-foreground"
+                  onClick={() => handleFilterChange(filterId, '')}
+                >
+                  {value} ✕
+                </Button>
+              ))}
+              {(priceRange[0] !== 0 || priceRange[1] !== 1000) && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-full bg-background text-primary hover:bg-primary hover:text-primary-foreground"
+                  onClick={() => setPriceRange([0, 1000])}
+                >
+                  Price: ${priceRange[0]} - ${priceRange[1]} ✕
+                </Button>
+              )}
+              {(concentration || concentrationUnit) && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-full bg-background text-primary hover:bg-primary hover:text-primary-foreground"
+                  onClick={() => { setConcentration(''); setConcentrationUnit(''); }}
+                >
+                  Concentration: {concentration} {concentrationUnit} ✕
+                </Button>
+              )}
+              {expirationDate && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-full bg-background text-primary hover:bg-primary hover:text-primary-foreground"
+                  onClick={() => setExpirationDate('')}
+                >
+                  Expiration Date: {expirationDate} ✕
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+      <div className="bg-primary text-primary-foreground p-2 text-center text-xs flex items-center justify-center">
+        <Syringe className="w-4 h-4 mr-2" />
+        For professional use only. Consult a pharmacist before use.
+      </div>
+    </div>
+  )
+}
