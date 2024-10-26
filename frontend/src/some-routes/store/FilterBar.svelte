@@ -1,5 +1,6 @@
 <script lang="ts">
     import { Search, X, Pill, Droplet, ShoppingBag, Stethoscope, Zap, Syringe, Clock, DollarSign, Percent, Calendar } from 'lucide-svelte';
+	import Cart from './Cart.svelte';
     
     export let searchQuery = '';
     
@@ -51,6 +52,8 @@
     
     $: activeFilters = Object.entries(filters).filter(([_, value]) => value !== 'all') as [FilterId, string][];
 </script>
+
+<Cart />
 
 <div class="w-full max-w-4xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden border-2 border-blue-600">
     <div class="bg-blue-600 text-white p-4 text-center font-bold text-lg flex items-center justify-center">

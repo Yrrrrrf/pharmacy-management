@@ -147,7 +147,8 @@ let searchQuery = '';
 
   let isLoading = true;
   onMount(() => {
-    isLoading = false; // Simulate data loading
+    isLoading = false;// Simulate data loading
+    // create a new IntersectionObserver to lazy load images (if needed)
   });
 
 </script>

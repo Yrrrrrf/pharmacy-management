@@ -9,7 +9,7 @@ app: FastAPI = FastAPI()
 allow_all_middleware(app)  # Allow all middleware
 
 config: Config = Config(  # * Set the configuration
-    PROJECT_NAME="Pharmacy Management System",
+    PROJECT_NAME= "Pharmacy Management System",
     VERSION = "v0.0.2",
     DESCRIPTION = "Comprehensive solution designed to streamline and modernize pharmacy operations",
     AUTHOR = "Yrrrrrf",

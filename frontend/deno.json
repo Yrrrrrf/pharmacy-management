@@ -1,0 +1,25 @@
+{
+  "tasks": {
+    "dev": "deno run -A npm:vite dev",
+    "build": "deno run -A npm:vite build",
+    "preview": "deno run -A npm:vite preview"
+  },
+  "nodeModulesDir": "auto",
+  "imports": {
+    "$lib/": "./src/lib/",
+    "$components/": "./src/components/",
+
+    "svelte": "npm:svelte",
+    "@sveltejs/kit": "npm:@sveltejs/kit",
+    "@sveltejs/adapter-auto": "npm:@sveltejs/adapter-auto",
+    "@sveltejs/vite-plugin-svelte": "npm:@sveltejs/vite-plugin-svelte",
+    "vite": "npm:vite",
+
+    "tailwindcss": "npm:tailwindcss",
+    "postcss": "npm:postcss",
+    "autoprefixer": "npm:autoprefixer",
+    "daisyui": "npm:daisyui",
+    
+    "lucide-svelte": "npm:lucide-svelte@0.294.0"
+  }
+}
