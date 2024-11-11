@@ -32,12 +32,12 @@ execute_sql_file() {
 
 # Execute schema setup script first
 echo "Setting up database schema..."
-execute_sql_file "/init/01_schema_setup.sql"
+execute_sql_file "/init/01-setup.sql"
 
 # Execute all other SQL files in the /init directory
 echo "Executing additional initialization scripts..."
 for file in /init/*.sql; do
-    if [ "$file" != "/init/01_schema_setup.sql" ]; then
+    if [ "$file" != "/init/01-setup.sql" ]; then
         execute_sql_file "$file"
     fi
 done

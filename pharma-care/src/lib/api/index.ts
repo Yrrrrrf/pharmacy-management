@@ -4,13 +4,6 @@
  * This file exports the API client, schema generator, and dynamically generated CRUD operations.
  */
 
-export {
-    generateSchemaTypes,
-    generateTypeDeclarations,
-    initializeSchemaTypes,
-    type SchemaTypes
-} from './schema-generator';
-
 export { generateCrudOperations, generateApiForSchema } from './crud';
 
 // Dynamically generate and export API operations

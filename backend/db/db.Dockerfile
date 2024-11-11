@@ -9,10 +9,11 @@ ENV LANG=en_US.utf8
 ENV TZ=Etc/UTC
 
 # Copy the schema setup SQL file
-COPY init/01_schema_setup.sql /init/
-COPY init/02_tables/*.sql /init/
-# COPY init/03_data/*.sql /init/
-# COPY init/04_data/*.sql /init/
+COPY init/01-setup.sql /init/
+COPY init/02-tables/*.sql /init/
+COPY init/03-data/*.sql /init/
+COPY init/04-views/*.sql /init/
+COPY init/05-fn/*.sql /init/
 
 # Copy the initialization script
 COPY scripts/init-db.sh /docker-entrypoint-initdb.d/

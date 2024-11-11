@@ -20,8 +20,14 @@ CREATE TABLE management.products (
     description VARCHAR(255),
     unit_price NUMERIC(10, 2) NOT NULL,
     category_id UUID REFERENCES management.categories(category_id),
-    concentration VARCHAR(255)
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Create an index to improve performance on common queries
+CREATE INDEX IF NOT EXISTS idx_products_stock_status
+    ON management.products USING btree (category_id)
+    WHERE category_id IS NOT NULL;
 
 COMMENT ON COLUMN management.products.product_id IS 'Unique identifier for the product';
 COMMENT ON COLUMN management.products.pharma_product_id IS 'Reference to the pharmaceutical product, if applicable';
@@ -30,7 +36,6 @@ COMMENT ON COLUMN management.products.name IS 'Name of the product';
 COMMENT ON COLUMN management.products.description IS 'Brief description of the product';
 COMMENT ON COLUMN management.products.unit_price IS 'Price per unit of the product';
 COMMENT ON COLUMN management.products.category_id IS 'Reference to the product category';
-COMMENT ON COLUMN management.products.concentration IS 'Concentration of the pharmaceutical in this product';
 
 -- Suppliers
 -- Suppliers of products, potentially including pharmaceutical manufacturers

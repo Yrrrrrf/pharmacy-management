@@ -1,6 +1,6 @@
 // src/lib/api/client.ts
 import { get } from 'svelte/store';
-import { API_CONFIG, APP_CONFIG } from '$lib/stores/app';
+import { API_CONFIG } from '$lib/stores/app';
 
 /**
  * Represents the structure of API request options.

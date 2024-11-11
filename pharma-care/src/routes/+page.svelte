@@ -3,25 +3,14 @@
     import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
     import { appName } from '$lib/stores/app';  // Add this import
-    
-    // Initialize Lucide icons with Runes
-    let MapPin = $state();
-    let Phone = $state();
-    let Mail = $state();
-    let ChevronRight = $state();
-  
-    onMount(async () => {
-        const icons = await import('lucide-svelte');
-        ({ MapPin, Phone, Mail, ChevronRight } = icons);
-    });
-  
+    import { MapPin, Phone, Mail, ChevronRight } from 'lucide-svelte';
+
     // Services data
     const services = [
         { title: 'Prescription Filling', description: 'Quick and accurate prescription services' },
         { title: 'Health Consultations', description: 'Expert advice from our pharmacists' },
         { title: 'Vaccinations', description: 'Flu shots and other immunizations' },
     ];
-  
     // Features data
     const features = [
         { title: 'Expert Staff', description: 'Knowledgeable and friendly pharmacists' },
@@ -29,25 +18,23 @@
         { title: 'Fast Service', description: 'Minimal wait times for prescriptions' },
         { title: 'Community Focus', description: 'Committed to our local community' },
     ];
-  
     // Testimonials data
     const testimonials = [
         { name: 'Sarah J.', quote: 'PharmaCare always goes above and beyond. Their staff is incredibly helpful!' },
         { name: 'Michael T.', quote: 'I appreciate the quick service and the wide range of products available.' },
         { name: 'Emily R.', quote: 'The pharmacists are knowledgeable and take the time to answer all my questions.' },
     ];
-  
     // Schedule data
     const schedule = [
         { day: 'Monday - Friday', hours: '9:00 AM - 9:00 PM' },
         { day: 'Saturday', hours: '10:00 AM - 6:00 PM' },
         { day: 'Sunday', hours: 'Closed' },
     ];
-  
+
     let emailInput = $state('');
-  
+
     function handleSubscribe() {
-        // Add newsletter subscription logic here
+        // * Add newsletter subscription logic here
         console.log('Subscribe:', emailInput);
         emailInput = '';
     }
@@ -68,7 +55,7 @@
                     <p class="py-6 text-xl">
                         Providing quality healthcare services and products to our community for over 25 years.
                     </p>
-                    <button class="btn btn-primary" onclick={() => goto('/stores')}>
+                    <button class="btn btn-primary" onclick={() => goto('/store')}>
                         Find a Store
                     </button>
                 </div>
@@ -132,24 +119,9 @@
                     <div>
                         <h2 class="text-3xl font-bold mb-4">Visit Us</h2>
                         <div class="space-y-4">
-                            {#if MapPin}
-                                <p class="flex items-center gap-2">
-                                    <MapPin class="text-primary" />
-                                    123 Health Street, Wellness City, MC 12345
-                                </p>
-                            {/if}
-                            {#if Phone}
-                                <p class="flex items-center gap-2">
-                                    <Phone class="text-primary" />
-                                    (555) 123-4567
-                                </p>
-                            {/if}
-                            {#if Mail}
-                                <p class="flex items-center gap-2">
-                                    <Mail class="text-primary" />
-                                    info@pharmacare.com
-                                </p>
-                            {/if}
+                            <p class="flex items-center gap-2"><MapPin class="text-primary" />123 Health Street, Wellness City, MC 12345</p>
+                            <p class="flex items-center gap-2"><Phone class="text-primary" />(555) 123-4567</p>
+                            <p class="flex items-center gap-2"><Mail class="text-primary" />info@pharmacare.com</p>
                         </div>
                     </div>
   
@@ -169,5 +141,5 @@
             </div>
         </section>
     </main>
+</div>
   
-  </div>

@@ -1,4 +1,4 @@
--- File: 00_00_local_db_setup.sql
+-- File: 00-setup-db.sql
 
 -- Enable psql command echoing and stop on error
 \set ON_ERROR_STOP on

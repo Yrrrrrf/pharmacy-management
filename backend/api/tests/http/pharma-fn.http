@@ -1,0 +1,161 @@
+### Variables
+@baseUrl = http://localhost:8000
+@fnPrefix = /fn/pharma
+@contentType = application/json
+
+### Test 1: Create a basic drug
+# Should create a new drug with basic information
+POST {{baseUrl}}{{fnPrefix}}/create_drug
+Content-Type: {{contentType}}
+
+{
+    "p_id": "550e8400-e29b-41d4-a716-446655440001",
+    "p_name": "Paracetamol",
+    "p_type": "Generic",
+    "p_nature": "Allopathic",
+    "p_commercialization": "I"
+}
+
+### Test 2: Create another drug with different details
+POST {{baseUrl}}{{fnPrefix}}/create_drug
+Content-Type: {{contentType}}
+
+{
+    "p_id": "550e8400-e29b-41d4-a716-446655440002",
+    "p_name": "Etesechol",
+    "p_type": "Patent",
+    "p_nature": "Allopathic",
+    "p_commercialization": "II"
+}
+
+### Test 3: Create a pharmaceutical product
+# Create a pharmaceutical form for Paracetamol
+POST {{baseUrl}}{{fnPrefix}}/create_pharmaceutical
+Content-Type: {{contentType}}
+
+{
+    "p_id": "660e8400-e29b-41d4-a716-446655440001",
+    "p_drug_id": "550e8400-e29b-41d4-a716-446655440001",
+    "p_form_id": "770e8400-e29b-41d4-a716-446655440001",
+    "p_concentration": "500mg"
+}
+
+### Test 4: Link drug with pathologies
+# Link Paracetamol with some pathologies
+POST {{baseUrl}}{{fnPrefix}}/link_drug_pathologies
+Content-Type: {{contentType}}
+
+{
+    "p_drug_id": "550e8400-e29b-41d4-a716-446655440001",
+    "p_pathology_ids": [
+        "880e8400-e29b-41d4-a716-446655440001",
+        "880e8400-e29b-41d4-a716-446655440002"
+    ]
+}
+
+### Test 5: Create drug with variations
+# Create a drug with multiple pharmaceutical forms
+POST {{baseUrl}}{{fnPrefix}}/create_drug_with_variations
+Content-Type: {{contentType}}
+
+{
+    "p_name": "Ibuprofen",
+    "p_type": "Generic",
+    "p_nature": "Allopathic",
+    "p_commercialization": "I",
+    "p_variations": [
+        {
+            "form_name": "Tablet",
+            "concentration": "200mg"
+        },
+        {
+            "form_name": "Tablet",
+            "concentration": "400mg"
+        },
+        {
+            "form_name": "Syrup",
+            "concentration": "100mg/5ml"
+        }
+    ]
+}
+
+### Test 6: Create complete drug with pathologies
+# Create a complete drug entry with variations and pathology links
+POST {{baseUrl}}{{fnPrefix}}/create_complete_drug
+Content-Type: {{contentType}}
+
+{
+    "p_name": "Amoxicillin",
+    "p_type": "Generic",
+    "p_nature": "Allopathic",
+    "p_commercialization": "I",
+    "p_variations": [
+        {
+            "form_name": "Capsule",
+            "concentration": "500mg"
+        },
+        {
+            "form_name": "Suspension",
+            "concentration": "250mg/5ml"
+        }
+    ],
+    "p_pathology_names": [
+        "Bacterial Infection",
+        "Pneumonia"
+    ]
+}
+
+### Test 7: Try to create drug with invalid type (Should fail)
+POST {{baseUrl}}{{fnPrefix}}/create_drug
+Content-Type: {{contentType}}
+
+{
+    "p_id": "550e8400-e29b-41d4-a716-446655440003",
+    "p_name": "Invalid Drug",
+    "p_type": "InvalidType",
+    "p_nature": "Allopathic",
+    "p_commercialization": "I"
+}
+
+### Test 8: Try to create pharmaceutical with non-existent drug (Should fail)
+POST {{baseUrl}}{{fnPrefix}}/create_pharmaceutical
+Content-Type: {{contentType}}
+
+{
+    "p_id": "660e8400-e29b-41d4-a716-446655440002",
+    "p_drug_id": "550e8400-e29b-41d4-a716-446655440999",
+    "p_form_id": "770e8400-e29b-41d4-a716-446655440001",
+    "p_concentration": "500mg"
+}
+
+### Test 9: Create drug with missing required field (Should fail)
+POST {{baseUrl}}{{fnPrefix}}/create_drug
+Content-Type: {{contentType}}
+
+{
+    "p_id": "550e8400-e29b-41d4-a716-446655440004",
+    "p_name": "Invalid Drug",
+    "p_type": "Generic",
+    "p_commercialization": "I"
+}
+
+### Test 10: Create complete drug with invalid pathology names (Should handle gracefully)
+POST {{baseUrl}}{{fnPrefix}}/create_complete_drug
+Content-Type: {{contentType}}
+
+{
+    "p_name": "Test Drug",
+    "p_type": "Generic",
+    "p_nature": "Allopathic",
+    "p_commercialization": "I",
+    "p_variations": [
+        {
+            "form_name": "Tablet",
+            "concentration": "100mg"
+        }
+    ],
+    "p_pathology_names": [
+        "NonExistentPathology1",
+        "NonExistentPathology2"
+    ]
+}

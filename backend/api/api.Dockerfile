@@ -1,5 +1,9 @@
 FROM python:3.12-slim
 
+# * This seams to be redundant, because the . is the default working directory
+# * But its necessary to set the working directory and be able to assign the WORKDIR as some volume...
+WORKDIR /app
+
 # Set environment variables
 # PYTHONDONTWRITEBYTECODE: Prevents Python from writing pyc files to disc (equivalent to python -B option)
 # PYTHONUNBUFFERED: Prevents Python from buffering stdout and stderr (equivalent to python -u option)
@@ -19,7 +23,7 @@ ENV DB_NAME='pharmacy_management'
 # * some docker networking magic
 # this must be the name of the service in the docker-compose file
 # in this case is the name of the db service (container)
-ENV DB_HOST='pharma-hub-db'
+ENV DB_HOST='pharma-care-db'
 
 ENV DB_OWNER_ADMIN='pharmacy_management_owner'
 ENV DB_OWNER_PWORD='secure_pharmacy_pwd'
@@ -48,7 +52,10 @@ COPY . .
 # Expose the port the app runs on
 EXPOSE 8000
 
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# * same as above but with hot reload
+CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "/app"]
+
 
 # todo: Impl healthcheck
 # 30s interval between checks, 30s timeout for each check, 3 retries before marking as unhealthy

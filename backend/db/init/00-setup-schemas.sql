@@ -1,4 +1,4 @@
--- File: 01_schema_setup.sql
+-- File: 00-setup-schemas.sql
 --     Sets up schemas and roles for the Pharmacy Management System.
 --
 -- # Purpose:

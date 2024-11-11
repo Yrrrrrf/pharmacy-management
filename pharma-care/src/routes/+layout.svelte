@@ -4,16 +4,17 @@
 	import { initTheme } from '../lib/stores/theme';
 	import '../app.css';
 
-
 	import UiShowcase from '$lib/components/layout/UIShowcase.svelte';
     import Footer from '$lib/components/layout/Footer.svelte';
     import NavBar from '$lib/components/layout/NavBar.svelte';
     import UrlDisplay from '$lib/components/layout/URLDisplay.svelte';
+    import { initializeApi } from '$lib/api';
 	let { children } = $props();
 
 	let ready = $state(false);
 
 	onMount(() => {
+		initializeApi();
 		initTheme();
 		ready = true;
 	});
