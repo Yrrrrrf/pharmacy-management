@@ -2,12 +2,10 @@
 -- PHARMACEUTICAL VIEWS
 -- ====================
 
--- Drug Variations View
--- Shows all variations of each drug with their forms and concentrations
--- Useful for: Inventory management, prescription filling, and product listings
+-- Drug Variations View with Pricing
 CREATE OR REPLACE VIEW pharma.v_drug_variations AS
 WITH drug_concentrations AS (
-    SELECT 
+    SELECT
         d.id AS drug_id,
         d.name AS drug_name,
         d.type,
@@ -15,22 +13,29 @@ WITH drug_concentrations AS (
         d.commercialization,
         f.name AS form_name,
         ARRAY_AGG(p.concentration ORDER BY p.concentration) AS concentrations,
+        -- Add price array that corresponds to concentrations
+        ARRAY_AGG(
+            COALESCE(mp.unit_price, NULL)::numeric
+            ORDER BY p.concentration
+        ) AS prices,
         ARRAY_AGG(DISTINCT ar.name) AS administration_routes,
         ARRAY_AGG(DISTINCT uc.name) AS usage_considerations
     FROM pharma.drug d
     JOIN pharma.pharmaceutical p ON d.id = p.drug_id
     JOIN pharma.form f ON p.form_id = f.id
+    -- Join with management.products to get pricing
+    LEFT JOIN management.products mp ON p.id = mp.pharma_product_id
     -- Get administration routes for this form
     LEFT JOIN pharma.form_administration_route far ON f.id = far.form_id
     LEFT JOIN pharma.administration_route ar ON far.route_id = ar.id
     -- Get usage considerations for this form
     LEFT JOIN pharma.form_usage_consideration fuc ON f.id = fuc.form_id
     LEFT JOIN pharma.usage_consideration uc ON fuc.consideration_id = uc.id
-    GROUP BY 
+    GROUP BY
         d.id, d.name, d.type, d.nature, d.commercialization,
         f.name, f.description
 )
-SELECT 
+SELECT
     drug_id,
     drug_name,
     type,
@@ -38,6 +43,7 @@ SELECT
     commercialization,
     form_name,
     concentrations,
+    prices,  -- New column for prices
     administration_routes,
     usage_considerations,
     -- Add pathologies for this drug
@@ -45,17 +51,22 @@ SELECT
      FROM pharma.drug_pathology dp
      JOIN pharma.pathology p ON dp.pathology_id = p.id
      WHERE dp.drug_id = dc.drug_id) AS pathologies
+    -- Add a JSON array combining concentrations and prices for easier consumption
 FROM drug_concentrations dc
 ORDER BY drug_name, form_name;
 
-COMMENT ON VIEW pharma.v_drug_variations IS 
+-- Update the view comment to reflect the new pricing information
+COMMENT ON VIEW pharma.v_drug_variations IS
 'Provides a comprehensive view of drug variations including:
 - Basic drug information (name, type, nature, commercialization)
 - Available forms and their descriptions
 - Array of concentrations for each drug-form combination
+- Array of prices corresponding to each concentration
+- JSON array of concentration-price pairs for easier consumption
 - Associated administration routes and usage considerations
 - Related pathologies
 Used for inventory management, prescription filling, and product listings.';
+
 
 -- Generic Alternatives View
 -- Shows generic alternatives for patent drugs

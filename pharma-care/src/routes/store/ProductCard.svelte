@@ -1,99 +1,119 @@
+<!-- components/ProductCard.svelte -->
 <script lang="ts">
-	import { Badge } from 'lucide-svelte';
-	import type { BaseProduct } from '$lib/api/types';
+    import { ShoppingCart, Tag, Pill, Activity, AlertCircle } from 'lucide-svelte';
+    import { productsStore } from '$lib/stores/products';
+    import type { BaseProduct, PharmaProduct, ProductActionHandler } from '$lib/api/types';
+ 
 
-	export let product: BaseProduct;
-  
-	// Helper functions with null checks
-	function getInitials(name: string | null): string {
-	  if (!name) return 'N/A';
-	  return name
-		.split(' ')
-		.map(word => word[0])
-		.join('')
-		.toUpperCase()
-		.slice(0, 2);
+	function getInitials(name: string) {
+		return name.split(' ').map((word) => word[0]).join('').toUpperCase();
 	}
-  
-	// Format price with proper handling of null/undefined
-	function formatPrice(price: string | null): string {
-	  if (!price) return 'N/A';
-	  try {
+
+	function formatPrice(price: number) {
 		return new Intl.NumberFormat('en-US', {
-		  style: 'currency',
-		  currency: 'USD'
-		}).format(Number(price));
-	  } catch {
-		return 'Invalid Price';
-	  }
+			style: 'currency',
+			currency: 'MXN'
+		}).format(price);
 	}
 
-	function addToCart(product: BaseProduct) {
-		console.log('Adding product to cart:', product);
-	}
-  </script>
-  
-  <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow duration-200">
-	<div class="card-body">
-	  <!-- Product Header -->
-	  <div class="flex items-center gap-4">
-		<div class="avatar placeholder">
-		  <div class="bg-neutral text-neutral-content rounded-full w-12">
-			<span>{getInitials(product?.product_name)}</span>
-		  </div>
-		</div>
-		
-		<div class="flex-1">
-		  <h2 class="card-title text-lg">
-			{product?.product_name ?? 'Unnamed Product'}
-		  </h2>
-		  <p class="text-sm opacity-60">
-			SKU: {product?.sku ?? 'No SKU'}
-		  </p>
-		</div>
-	  </div>
-  
-	  <!-- Product Info -->
-	  <div class="mt-4 space-y-2">
-		<p class="text-sm line-clamp-2">
-		  {product?.description ?? 'No description available'}
-		</p>
-  
-		<!-- Tags/Badges -->
-		<div class="flex flex-wrap gap-2">
-		  {#if product?.drug_type}
-			<span class="badge badge-primary">{product.drug_type}</span>
-		  {/if}
-		  {#if product?.category_name}
-			<span class="badge">{product.category_name}</span>
-		  {/if}
-		  {#if product?.form_name}
-			<span class="badge badge-outline">{product.form_name}</span>
-		  {/if}
-		</div>
-  
-		<!-- Pharmaceutical Details -->
-		{#if product?.pharma_concentration}
-		  <div class="text-sm">
-			<span class="opacity-60">Concentration:</span> {product.pharma_concentration}
-		  </div>
-		{/if}
-	  </div>
-  
-	  <!-- Price and Actions -->
-	  <div class="card-actions justify-between items-center mt-4">
-		<div class="text-xl font-bold">
-		  {formatPrice(product?.unit_price)}
-		</div>
-		
-		<div class="flex gap-2">
-		  <button class="btn btn-circle btn-ghost btn-sm">
-			<Badge class="w-4 h-4" />
-		  </button>
-		  <button class="btn btn-primary btn-sm" onclick={() => addToCart(product)}>
-			Add to Cart
-		  </button>
-		</div>
-	  </div>
-	</div>
-  </div>
+    // Props using Runes
+    const { 
+        product,
+        onAddToCart = (p: BaseProduct, ph?: PharmaProduct) => console.log('Add to cart:', p, ph)
+    } = $props<{
+        product: BaseProduct;
+        onAddToCart?: ProductActionHandler;
+    }>();
+
+    // Computed values using derived state
+    const pharmaDetails = $derived(product.drug_id ? $productsStore.pharmaDetails.get(product.drug_id) : null);
+    const initials = $derived(getInitials(product.product_name));
+    const formattedPrice = $derived(formatPrice(product.unit_price));
+    const isPharmaProduct = $derived(!!product.pharma_id);
+</script>
+
+<!-- Rest of the template remains mostly the same, but simplified -->
+<div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300">
+    <div class="card-body">
+        <!-- Product Header -->
+        <div class="flex items-center gap-4">
+            <div class="avatar placeholder">
+                <div class="bg-neutral text-neutral-content rounded-full w-12">
+                    <span>{initials}</span>
+                </div>
+            </div>
+            
+            <div class="flex-1">
+                <h2 class="card-title text-lg">
+                    {product.product_name}
+                    {#if isPharmaProduct}
+                        <Pill class="w-4 h-4 text-primary" />
+                    {/if}
+                </h2>
+                <p class="text-sm opacity-60">SKU: {product.sku}</p>
+            </div>
+        </div>
+
+        <!-- Product Info -->
+        {#if product.description}
+            <p class="text-sm line-clamp-2 mt-4">{product.description}</p>
+        {/if}
+
+        <!-- Pharma Details -->
+        {#if isPharmaProduct && pharmaDetails}
+            <div class="mt-4 space-y-2">
+                <!-- Type and Nature -->
+                <div class="flex flex-wrap gap-2">
+                    <span class="badge badge-primary">{pharmaDetails.type}</span>
+                    <span class="badge badge-secondary">{pharmaDetails.nature}</span>
+                    <span class="badge">Class {pharmaDetails.commercialization}</span>
+                </div>
+
+                <!-- Form and Concentration -->
+                {#if pharmaDetails.form_name}
+                    <div class="text-sm">
+                        <span class="opacity-60">Form:</span> {pharmaDetails.form_name}
+                        {#if pharmaDetails.concentrations?.[0]}
+                            - {pharmaDetails.concentrations[0]}
+                        {/if}
+                    </div>
+                {/if}
+
+                <!-- Pathologies -->
+                {#if pharmaDetails.pathologies?.length}
+                    <div class="flex flex-wrap gap-1">
+                        {#each pharmaDetails.pathologies as pathology}
+                            <span class="badge badge-outline badge-sm">
+                                <Activity class="w-3 h-3 mr-1" />
+                                {pathology}
+                            </span>
+                        {/each}
+                    </div>
+                {/if}
+            </div>
+        {/if}
+
+        <!-- Categories -->
+        {#if product.category_name}
+            <div class="flex gap-2 mt-2">
+                <span class="badge badge-outline">
+                    <Tag class="w-3 h-3 mr-1" />
+                    {product.category_name}
+                </span>
+            </div>
+        {/if}
+
+        <!-- Price and Actions -->
+        <div class="card-actions justify-between items-center mt-4">
+            <div class="text-xl font-bold">{formattedPrice}</div>
+            
+            <button 
+                class="btn btn-primary btn-sm gap-2"
+                onclick={() => onAddToCart(product, pharmaDetails ?? undefined)}
+            >
+                <ShoppingCart class="w-4 h-4" />
+                Add to Cart
+            </button>
+        </div>
+    </div>
+</div>

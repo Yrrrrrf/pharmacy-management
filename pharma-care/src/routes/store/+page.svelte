@@ -24,10 +24,11 @@
       }
     }
   </script>
-  
-  <div class="container mx-auto px-4 py-8">
+
+<div class="container mx-auto px-4 py-8">
     <!-- Filters Section -->
-    <FilterBar bind:searchQuery={$searchQuery} bind:filters={$filters} />
+
+    <FilterBar />
     
     <!-- Content Section -->
     <section class="mt-8">

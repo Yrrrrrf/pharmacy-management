@@ -65,7 +65,7 @@ model_forge.log_schema_views()
 # ? API Forge -----------------------------------------------------------------------------------
 api_forge = APIForge(model_forge=model_forge)
 # * THE ROUTES MUST BE GENERATED AFTER THE MODELS!
-api_forge.gen_table_routes()
+# api_forge.gen_table_routes()
 api_forge.gen_view_routes()
 # * Print the routers
 [app.include_router(router) for router in api_forge.routers.values()]

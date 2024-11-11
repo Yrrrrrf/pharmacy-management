@@ -11,18 +11,13 @@ SELECT
     -- Pharmaceutical information
     ph.id AS pharma_id,
     d.id AS drug_id,
-    d.name AS drug_name,
-    d.type AS drug_type,
-    f.name AS form_name,
-    ph.concentration AS pharma_concentration,
     p.created_at,
     p.updated_at
 FROM
     management.products p
     LEFT JOIN management.categories c ON p.category_id = c.category_id
     LEFT JOIN pharma.pharmaceutical ph ON p.pharma_product_id = ph.id
-    LEFT JOIN pharma.drug d ON ph.drug_id = d.id
-    LEFT JOIN pharma.form f ON ph.form_id = f.id;
+    LEFT JOIN pharma.drug d ON ph.drug_id = d.id;
 
 COMMENT ON VIEW management.v_base_products IS
 'Comprehensive view of all products including pharmaceutical details when available.
