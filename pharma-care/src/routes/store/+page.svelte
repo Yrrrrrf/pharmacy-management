@@ -5,7 +5,7 @@
     import ProductCard from './ProductCard.svelte';
     import FilterBar from './FilterBar.svelte';
     import { productsStore, filteredProducts, getFilterOptions } from '$lib/stores/products';
-    import Cart from './Cart.svelte';
+    import Cart from '../../lib/components/common/store/Cart.svelte';
 
     async function loadProducts() {
         try {
@@ -26,8 +26,6 @@
 </script>
 
 <div class="container mx-auto px-4 py-8">
-    <Cart />
-
     <!-- Pass the derived filter options -->
     <FilterBar options={filterOptions} />
    

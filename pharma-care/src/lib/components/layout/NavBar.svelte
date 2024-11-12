@@ -21,6 +21,7 @@
         LogIn, 
         LogOut 
     } from 'lucide-svelte';
+    import Cart from '$lib/components/common/store/Cart.svelte';
 
     // State using Runes
     let isSearchActive = $state(false);
@@ -80,7 +81,7 @@
             {#each visibleNavItems as {icon: Icon, label, path}}
                 <li>
                     <button class="btn btn-ghost" onclick={() => goto(path)} >
-                        <svelte:component this={Icon} class="w-5 h-5" />
+                        <Icon class="w-5 h-5" />
                         <span>{label}</span>
                     </button>
                 </li>
@@ -124,6 +125,7 @@
             <!-- User Avatar -->
             <UserAvatar LogOutIcon={LogOut} />
         {:else}
+            <Cart />
             <!-- Login/Auth Card Dropdown -->
             <div class="dropdown dropdown-end">
                 <button class="btn btn-primary btn-sm">

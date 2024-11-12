@@ -32,22 +32,6 @@ export type ProductWithPharma = BaseProduct & {
     pharmaDetails?: PharmaDetails;
 };
 
-
-
-export interface PharmaProducts {
-    drug_id: string;
-    drug_name: string;
-    type: string;
-    nature: string;
-    commercialization: string;
-    form: string;
-    concentrations: string[];
-    prices: string[];
-    administration_routes: string[] | null;
-    usage_considerations: string[] | null;
-    pathologies: string[] | null;
-}
-
 export interface PharmaProduct {
     id: string;
     name: string;

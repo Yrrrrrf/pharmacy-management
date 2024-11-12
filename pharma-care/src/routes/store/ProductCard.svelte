@@ -4,18 +4,22 @@
     import { onMount } from 'svelte';
     import type { ProductWithPharma } from '$lib/stores/products';
 
-    const {
-        product,
-        onAddToCart = (p: ProductWithPharma) => console.log('Add to cart:', p)
-    } = $props<{
+    import { cartStore } from '$lib/stores/cart';
+
+    const { product } = $props<{
         product: ProductWithPharma;
-        onAddToCart?: (product: ProductWithPharma) => void;
     }>();
+
+    function handleAddToCart() {
+        cartStore.addItem(product);
+    }
 
     // Get the current product's concentration
     const currentConcentration = $derived(() => {
         if (!product.pharmaDetails?.concentrations) return '';
-        return product.pharmaDetails.concentrations[0];
+        return product.pharmaDetails.concentrations.find(conc => 
+            product.product_name.includes(conc)
+        ) || product.pharmaDetails.concentrations[0];
     });
 
 
@@ -118,7 +122,7 @@
             
             <button 
                 class="btn btn-primary btn-sm gap-2"
-                onclick={() => onAddToCart(product)}
+                onclick={handleAddToCart}
             >
                 <ShoppingCart class="w-4 h-4" />
                 Add to Cart
