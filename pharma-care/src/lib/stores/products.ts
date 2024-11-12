@@ -1,63 +1,153 @@
-// stores/products.ts
-import { writable, derived, get } from 'svelte/store';
+// * Used on 'store/ProductCard.svelte'
+// lib/types/product.ts
+export interface BaseProduct {
+    product_id: string;
+    sku: string;
+    product_name: string;
+    description: string | null;
+    unit_price: string;
+    category_name: string | null;
+    pharma_id: string | null;
+    drug_id: string | null;
+    concentration?: string;
+    form?: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface PharmaDetails {
+    drug_id: string;
+    drug_name: string;
+    type: 'Patent' | 'Generic';
+    nature: 'Allopathic' | 'Homeopathic';
+    commercialization: 'I' | 'II' | 'III' | 'IV' | 'V' | 'VI';
+    form: string;
+    concentration: string;
+    pathologies?: string[];
+    administration_routes?: string[];
+    usage_considerations?: string[];
+}
+
+export type ProductWithPharma = BaseProduct & {
+    pharmaDetails?: PharmaDetails;
+};
+
+
+
+export interface PharmaProducts {
+    drug_id: string;
+    drug_name: string;
+    type: string;
+    nature: string;
+    commercialization: string;
+    form: string;
+    concentrations: string[];
+    prices: string[];
+    administration_routes: string[] | null;
+    usage_considerations: string[] | null;
+    pathologies: string[] | null;
+}
+
+export interface PharmaProduct {
+    id: string;
+    name: string;
+    type: string;
+    nature: string;
+    commercialization: string;
+    form: string;
+    concentration: string;
+    price: string;
+}
+
+
+// // ^ Optional: Add event type for better type safety
+// export type ProductActionHandler = (
+//     product: BaseProduct, pharmaDetails?: PharmaProduct
+// ) => void;
+
+// * Used on 'store/FilterBar.svelte'
+export interface FilterOptions {
+    drugNames: string[];
+    drugTypes: ('Patent' | 'Generic')[];
+    drugNatures: ('Allopathic' | 'Homeopathic')[];
+    commercializations: ('I' | 'II' | 'III' | 'IV' | 'V' | 'VI')[];
+    pathologies: string[];
+    effects: string[];
+    forms: string[];
+    routes: string[];
+    considerations: string[];
+}
+
+export interface Filters {
+    // ~ GENERAL filters
+    name: string;
+    // ~ PHARMACEUTICAL filters
+    drugType: string;
+    drugNature: string;
+    commercialization: string;
+    pathology: string;
+    effect: string;
+    // ~ pharma-product filters
+    pharmaceuticForm: string;
+    administrationRoute: string;
+    usageConsideration: string;
+    concentration: string;
+    // ~ product specific filters
+    price: string;
+}
+
+
+// lib/stores/products.ts
+import { writable, derived } from 'svelte/store';
 import { defaultApiClient } from '$lib/api/client';
-import type { BaseProduct, PharmaProduct, FilterOptions } from '$lib/api/types';
 
 interface ProductsState {
-    items: BaseProduct[];
-    pharmaDetails: Map<string, PharmaProduct>; // Cache pharma details by drug_id
+    items: ProductWithPharma[];
     isLoading: boolean;
     error: string | null;
     lastUpdated: Date | null;
 }
 
 function createProductsStore() {
-    const initialState: ProductsState = {
+    const { subscribe, set, update } = writable<ProductsState>({
         items: [],
-        pharmaDetails: new Map(),
         isLoading: false,
         error: null,
         lastUpdated: null
-    };
-
-    const { subscribe, set, update } = writable(initialState);
+    });
 
     return {
         subscribe,
         loadProducts: async () => {
             update(state => ({ ...state, isLoading: true, error: null }));
+            
             try {
-                const products = await defaultApiClient.request<BaseProduct[]>('/management/v_base_products');
+                // Fetch base products
+                const baseProducts = await defaultApiClient.request<BaseProduct[]>('/management/v_base_products');
                 
-                // Collect unique drug_ids from pharma products
-                const drugIds = new Set(
-                    products
-                        .filter(p => p.pharma_id && p.drug_id)
-                        .map(p => p.drug_id!)
-                );
-
-                // Fetch pharma details for all pharmaceutical products
-                const pharmaDetails = new Map<string, PharmaProduct>();
-                if (drugIds.size > 0) {
-                    const promises = Array.from(drugIds).map(async (drugId) => {
+                // Fetch pharma details in parallel for products with drug_id
+                const productsWithPharma: ProductWithPharma[] = await Promise.all(
+                    baseProducts.map(async (product) => {
+                        if (!product.drug_id) return product;
+                        
                         try {
-                            const response = await defaultApiClient
-                                .request<PharmaProduct[]>(`/pharma/v_drug_variations?drug_id=${drugId}`);
-                            if (response && response[0]) {
-                                pharmaDetails.set(drugId, response[0]);
-                            }
+                            const [pharmaDetails] = await defaultApiClient
+                                .request<PharmaDetails[]>(`/pharma/v_drug_variations?drug_id=${product.drug_id}`);
+                            
+                            return {
+                                ...product,
+                                pharmaDetails: pharmaDetails || undefined
+                            };
                         } catch (error) {
-                            console.error(`Error fetching pharma details for drug ${drugId}:`, error);
+                            console.error(`Failed to fetch pharma details for ${product.product_id}:`, error);
+                            return product;
                         }
-                    });
-
-                    await Promise.all(promises);
-                }
+                    })
+                );
 
                 update(state => ({
                     ...state,
-                    items: products,
-                    pharmaDetails,
+                    items: productsWithPharma,
                     isLoading: false,
                     lastUpdated: new Date()
                 }));
@@ -68,160 +158,177 @@ function createProductsStore() {
                     isLoading: false
                 }));
             }
-        },
-        getPharmaDetails: (drugId: string) => {
-            const state = get(productsStore);
-            return state.pharmaDetails.get(drugId) || null;
-        },
-        reset: () => set(initialState)
+        }
     };
 }
 
 export const productsStore = createProductsStore();
 
+// Update the ProductCard type definitions
+export type ProductActionHandler = (
+    product: BaseProduct, 
+    pharmaDetails?: PharmaProduct
+) => void;
 
-// todo: Check the filtering functions...
-// Filtering constants
+
+// Define price range constants
 export const PRICE_RANGE = {
     MIN: 0,
-    MAX: 1000,
-    STEP: 10
+    MAX: 10000
 } as const;
 
-// Filter options initial state
-export const initialFilters: FilterOptions = {
-    drugType: 'all',
-    drugNature: 'all',
-    commercialization: 'all',
-    pathology: 'all',
-    effect: 'all',
-    pharmaceuticForm: 'all',
-    administrationRoute: 'all',
-    usageConsideration: 'all',
-    concentration: '',
-    price: `${PRICE_RANGE.MIN},${PRICE_RANGE.MAX}`,
+// Create the filters store
+function createFiltersStore() {
+    const initialFilters: Filters = {
+        name: 'all',
+        drugType: 'all',
+        drugNature: 'all',
+        commercialization: 'all',
+        pathology: 'all',
+        effect: 'all',
+        pharmaceuticForm: 'all',
+        administrationRoute: 'all',
+        usageConsideration: 'all',
+        concentration: '',
+        price: `${PRICE_RANGE.MIN},${PRICE_RANGE.MAX}`,
+    };
+
+    const { subscribe, set, update } = writable<Filters>(initialFilters);
+
+    return {
+        subscribe,
+        set,
+        update,
+        reset: () => set(initialFilters)
+    };
+}
+
+// Create the search query store
+export const searchQuery = writable<string>('');
+
+// Create the filters store instance
+export const filters = createFiltersStore();
+
+export function getFilterOptions(state: ProductWithPharma[]): FilterOptions {
+    const options: FilterOptions = {
+        drugNames: ['all'],
+        drugTypes: ['all'],
+        drugNatures: ['all'],
+        commercializations: ['all'],
+        pathologies: ['all'],
+        effects: ['all'],
+        forms: ['all'],
+        routes: ['all'],
+        considerations: ['all']
+    };
+
+    state.forEach(product => {
+        if (product.pharmaDetails) {
+            const {
+                drug_name,
+                type,
+                nature,
+                commercialization,
+                form,
+                pathologies,
+                administration_routes,
+                usage_considerations
+            } = product.pharmaDetails;
+
+            if (!options.drugNames.includes(drug_name)) options.drugNames.push(drug_name);
+            if (!options.drugTypes.includes(type)) options.drugTypes.push(type);
+            if (!options.drugNatures.includes(nature)) options.drugNatures.push(nature);
+            if (!options.commercializations.includes(commercialization)) 
+                options.commercializations.push(commercialization);
+            if (!options.forms.includes(form)) options.forms.push(form);
+
+            pathologies?.forEach(p => {
+                if (!options.pathologies.includes(p)) options.pathologies.push(p);
+            });
+
+            administration_routes?.forEach(r => {
+                if (!options.routes.includes(r)) options.routes.push(r);
+            });
+
+            usage_considerations?.forEach(c => {
+                if (!options.considerations.includes(c)) options.considerations.push(c);
+            });
+        }
+    });
+
+    return options;
 };
 
-// Create stores
-export const searchQuery = writable('');
-export const filters = writable(initialFilters);
 
-// Helper functions for filtering
-function matchesSearch(product: BaseProduct, query: string): boolean {
-    if (!query) return true;
-    const searchLower = query.toLowerCase();
-    return (
-        product.product_name.toLowerCase().includes(searchLower) ||
-        product.description?.toLowerCase().includes(searchLower) ||
-        product.sku.toLowerCase().includes(searchLower)
-    );
-}
-
-function matchesPriceRange(product: BaseProduct, priceRange: string): boolean {
-    const [min, max] = priceRange.split(',').map(Number);
-    const price = Number(product.unit_price);
-    return price >= min && price <= max;
-}
-
-function matchesFilters(
-    product: BaseProduct, 
-    filters: FilterOptions, 
-    pharmaDetails: PharmaProduct | null
-): boolean | undefined {
-    // If no pharma details and pharma filters are active, exclude product
-    if (!pharmaDetails && (
-        filters.drugType !== 'all' || 
-        filters.drugNature !== 'all' ||
-        filters.pathology !== 'all' ||
-        filters.effect !== 'all'
-    )) {
-        return false;
-    }
-
-    // Price range check
-    if (!matchesPriceRange(product, filters.price)) {
-        return false;
-    }
-
-    // If not a pharma product, only check general filters
-    if (!pharmaDetails) {
-        return true;
-    }
-
-    // Check pharma-specific filters
-    return (
-        (filters.drugType === 'all' || pharmaDetails.type === filters.drugType) &&
-        (filters.drugNature === 'all' || pharmaDetails.nature === filters.drugNature) &&
-        (filters.commercialization === 'all' || pharmaDetails.commercialization === filters.commercialization) &&
-        (filters.pathology === 'all' || pharmaDetails.pathologies?.includes(filters.pathology)) &&
-        (filters.pharmaceuticForm === 'all' || pharmaDetails.form_name === filters.pharmaceuticForm) &&
-        (filters.administrationRoute === 'all' || pharmaDetails.administration_routes?.includes(filters.administrationRoute)) &&
-        (filters.usageConsideration === 'all' || pharmaDetails.usage_considerations?.includes(filters.usageConsideration)) &&
-        (!filters.concentration || pharmaDetails.concentrations?.includes(filters.concentration))
-    );
-}
-
-// Derived store for filtered products
+// Update filteredProducts to use filters
 export const filteredProducts = derived(
-    [productsStore, searchQuery, filters],
-    ([$products, $searchQuery, $filters]) => {
-        return $products.items.filter(product => {
-            // Ensure pharmaDetails is properly typed
-            const pharmaDetails: PharmaProduct | null = 
-                product.drug_id ? $products.pharmaDetails.get(product.drug_id) ?? null : null;
-            
-            return (
-                matchesSearch(product, $searchQuery) &&
-                matchesFilters(product, $filters, pharmaDetails)
+    [productsStore, filters, searchQuery],
+    ([$products, $filters, $search]) => {
+        let filtered = $products.items;
+
+        // Apply search filter
+        if ($search) {
+            const searchLower = $search.toLowerCase();
+            filtered = filtered.filter(product => 
+                product.product_name.toLowerCase().includes(searchLower) ||
+                product.sku.toLowerCase().includes(searchLower) ||
+                product.description?.toLowerCase().includes(searchLower)
             );
+        }
+
+        // Apply filters
+        filtered = filtered.filter(product => {
+            // Skip filtering if no pharma details or if filter is set to 'all'
+            if (!product.pharmaDetails) {
+                return $filters.name === 'all'; // Only show non-pharma products when no filters are active
+            }
+
+            const matchesName = $filters.name === 'all' || 
+                product.pharmaDetails.drug_name === $filters.name;
+
+            const matchesType = $filters.drugType === 'all' || 
+                product.pharmaDetails.type === $filters.drugType;
+
+            const matchesNature = $filters.drugNature === 'all' || 
+                product.pharmaDetails.nature === $filters.drugNature;
+
+            const matchesCommercialization = $filters.commercialization === 'all' || 
+                product.pharmaDetails.commercialization === $filters.commercialization;
+
+            const matchesPathology = $filters.pathology === 'all' || 
+                product.pharmaDetails.pathologies?.includes($filters.pathology);
+
+            const matchesForm = $filters.pharmaceuticForm === 'all' || 
+                product.pharmaDetails.form === $filters.pharmaceuticForm;
+
+            const matchesRoute = $filters.administrationRoute === 'all' || 
+                product.pharmaDetails.administration_routes?.includes($filters.administrationRoute);
+
+            const matchesConsideration = $filters.usageConsideration === 'all' || 
+                product.pharmaDetails.usage_considerations?.includes($filters.usageConsideration);
+
+            const matchesConcentration = !$filters.concentration || 
+                product.pharmaDetails.concentration.includes($filters.concentration);
+
+            // Price filter
+            const [minPrice, maxPrice] = $filters.price.split(',').map(Number);
+            const productPrice = Number(product.unit_price);
+            const matchesPrice = productPrice >= minPrice && productPrice <= maxPrice;
+
+            return matchesName && 
+                   matchesType && 
+                   matchesNature && 
+                   matchesCommercialization && 
+                   matchesPathology && 
+                   matchesForm && 
+                   matchesRoute && 
+                   matchesConsideration && 
+                   matchesConcentration && 
+                   matchesPrice;
         });
+
+        return filtered;
     }
 );
 
-// Get unique values for filter options
-export function getFilterOptions(products: ProductsState): {
-    drugTypes: string[];
-    drugNatures: string[];
-    commercializations: string[];
-    pathologies: string[];
-    effects: string[];
-    forms: string[];
-    routes: string[];
-    considerations: string[];
-    concentrations: string[];
-} {
-    const options = {
-        drugTypes: new Set<string>(['all']),
-        drugNatures: new Set<string>(['all']),
-        commercializations: new Set<string>(['all']),
-        pathologies: new Set<string>(['all']),
-        effects: new Set<string>(['all']),
-        forms: new Set<string>(['all']),
-        routes: new Set<string>(['all']),
-        considerations: new Set<string>(['all']),
-        concentrations: new Set<string>(),
-    };
-
-    products.pharmaDetails.forEach(pharma => {
-        options.drugTypes.add(pharma.type);
-        options.drugNatures.add(pharma.nature);
-        options.commercializations.add(pharma.commercialization);
-        pharma.pathologies?.forEach(p => options.pathologies.add(p));
-        pharma.usage_considerations?.forEach(c => options.considerations.add(c));
-        pharma.form_name && options.forms.add(pharma.form_name);
-        pharma.administration_routes?.forEach(r => options.routes.add(r));
-        pharma.concentrations?.forEach(c => options.concentrations.add(c));
-    });
-
-    return {
-        drugTypes: Array.from(options.drugTypes),
-        drugNatures: Array.from(options.drugNatures),
-        commercializations: Array.from(options.commercializations),
-        pathologies: Array.from(options.pathologies),
-        effects: Array.from(options.effects),
-        forms: Array.from(options.forms),
-        routes: Array.from(options.routes),
-        considerations: Array.from(options.considerations),
-        concentrations: Array.from(options.concentrations),
-    };
-}
+// Export everything needed
