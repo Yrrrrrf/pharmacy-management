@@ -91,3 +91,30 @@ AND d1.id != d2.id;
 COMMENT ON VIEW pharma.v_generic_alternatives IS 
 'Identifies generic alternatives for patent drugs based on shared pathologies. 
 Important for cost-effective prescribing and insurance requirements.';
+
+
+-- Create a view for pharmaceutical products with pricing info
+CREATE OR REPLACE VIEW management.v_pharma_products AS
+SELECT
+    p.product_id,
+    p.sku,
+    p.name as product_name,
+    p.unit_price,
+    ph.concentration,
+    d.name as drug_name,
+    d.type as drug_type,
+    f.name as form_name,
+    ch.path as category_path,
+    COALESCE(SUM(b.quantity_remaining), 0) as stock_available
+FROM 
+    management.products p
+    JOIN pharma.pharmaceutical ph ON p.pharma_product_id = ph.id
+    JOIN pharma.drug d ON ph.drug_id = d.id
+    JOIN pharma.form f ON ph.form_id = f.id
+    LEFT JOIN management.categories c ON p.category_id = c.category_id
+    LEFT JOIN management.v_category_hierarchy ch ON c.category_id = ch.category_id
+    LEFT JOIN management.batches b ON p.product_id = b.product_id
+GROUP BY 
+    p.product_id, p.sku, p.name, p.unit_price, 
+    ph.concentration, d.name, d.type, f.name, ch.path
+;

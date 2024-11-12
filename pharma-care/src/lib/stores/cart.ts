@@ -67,16 +67,20 @@ function createCartStore() {
                     );
                     return { ...state, items: updatedItems, isOpen: true };
                 } else {
-                    let name = product.pharmaDetails?.drug_name + " " +  currentConcentration(product);
-
+                    let pharma_name: string;
+                    if (product.pharmaDetails) {
+                        pharma_name = `${product.pharmaDetails.drug_name} ${currentConcentration(product)}`.trim();
+                    } else {
+                        pharma_name = product.product_name;
+                    }
                     const newItem: CartItem = {
                         id: product.product_id,
-                        name: name || product.product_name,
+                        name: pharma_name,
                         price: Number(product.unit_price),
                         quantity: 1,
                         isPharma: !!product.pharmaDetails,
-                        image: '/api/placeholder/80/80', // You might want to add actual product images
-                        product // Store the full product
+                        image: '/api/placeholder/80/80',
+                        product
                     };
                     return {
                         ...state,
