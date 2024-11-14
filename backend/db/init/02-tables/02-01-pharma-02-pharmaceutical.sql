@@ -5,8 +5,27 @@
 CREATE TABLE pharma.form (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(255) NOT NULL,
+    code VARCHAR(4) NOT NULL UNIQUE,
+    -- todo: Check what does the CHECK constraint do...
+--     code VARCHAR(4) NOT NULL UNIQUE CHECK (char_length(code) = 4),
     description TEXT
 );
+
+-- CREATE OR REPLACE FUNCTION random_string(length INT) RETURNS VARCHAR AS $$
+-- DECLARE
+--     chars VARCHAR[] := ARRAY[
+--         'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+--         'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'
+--     ];
+--     result VARCHAR := '';
+--     i INT;
+-- BEGIN
+--     FOR i IN 1..length LOOP
+--         result := result || chars[1 + (random() * 26)::INT];
+--     END LOOP;
+--     RETURN result;
+-- END;
+-- $$ LANGUAGE plpgsql;
 
 COMMENT ON COLUMN pharma.form.name IS 'Name of the pharmaceutical form';
 COMMENT ON COLUMN pharma.form.description IS 'Optional description of the pharmaceutical form';

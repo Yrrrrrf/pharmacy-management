@@ -34,22 +34,18 @@ INSERT INTO pharma.effect (id, name, description) VALUES
     (gen_random_uuid(), 'Analgésico', 'Alivia el dolor'),
     (gen_random_uuid(), 'Broncodilatador', 'Dilata los bronquios');
 
--- Populate Drug table
-INSERT INTO pharma.drug (id, name, type, nature, commercialization) VALUES
-    (gen_random_uuid(), 'Losartán', 'Generic', 'Allopathic', 'I'),
-    (gen_random_uuid(), 'Metformina', 'Generic', 'Allopathic', 'II'),
-    (gen_random_uuid(), 'Sumatriptán', 'Patent', 'Allopathic', 'III'),
-    (gen_random_uuid(), 'Ibuprofeno', 'Generic', 'Allopathic', 'I'),
-    (gen_random_uuid(), 'Salbutamol', 'Generic', 'Allopathic', 'II');
-
 -- Populate Form table
-INSERT INTO pharma.form (id, name, description) VALUES
-    (gen_random_uuid(), 'Tableta', 'Forma farmacéutica sólida'),
-    (gen_random_uuid(), 'Cápsula', 'Cubierta de gelatina con medicamento'),
-    (gen_random_uuid(), 'Jarabe', 'Forma farmacéutica líquida'),
-    (gen_random_uuid(), 'Inhalador', 'Dispositivo para administración pulmonar'),
-    (gen_random_uuid(), 'Suspensión', 'Forma farmacéutica líquida con partículas'),
-    (gen_random_uuid(), 'Inyección', 'Administración por vía intramuscular')
+INSERT INTO pharma.form (id, name, code, description) VALUES
+    (gen_random_uuid(), 'Tableta', 'TAB', 'Forma farmacéutica sólida'),
+    (gen_random_uuid(), 'Cápsula', 'CAPS', 'Cubierta de gelatina con medicamento'),
+    (gen_random_uuid(), 'Jarabe', 'JAR', 'Forma farmacéutica líquida'),
+    (gen_random_uuid(), 'Inhalador', 'INH', 'Dispositivo para administración pulmonar'),
+    (gen_random_uuid(), 'Suspensión', 'SUS', 'Forma farmacéutica líquida con partículas'),
+    (gen_random_uuid(), 'Inyección', 'INY', 'Administración por vía intramuscular'),
+    (gen_random_uuid(), 'Gel', 'GEL', 'Forma farmacéutica semisólida'),
+    (gen_random_uuid(), 'Crema', 'CRE', 'Forma farmacéutica semisólida'),
+    (gen_random_uuid(), 'Gotas', 'GOT', 'Forma farmacéutica líquida'),
+    (gen_random_uuid(), 'Tableta Masticable', 'TAM', 'Tableta que se desintegra en la boca')
 ;
 
 -- Populate Administration Route table
@@ -73,23 +69,25 @@ INSERT INTO pharma.usage_consideration (id, name, description) VALUES
     (gen_random_uuid(), 'No Triturar', 'No romper ni triturar la tableta')
 ;
 
--- Link drugs with pathologies (you'll need to get the actual UUIDs)
-DO $$
-DECLARE
-    v_drug_id UUID;
-    v_pathology_id UUID;
-BEGIN
-    -- Get IDs for Losartán and Hipertensión
-    SELECT id INTO v_drug_id FROM pharma.drug WHERE name = 'Losartán' LIMIT 1;
-    SELECT id INTO v_pathology_id FROM pharma.pathology WHERE name = 'Hipertensión' LIMIT 1;
-    INSERT INTO pharma.drug_pathology (drug_id, pathology_id)
-    VALUES (v_drug_id, v_pathology_id);
 
-    -- Get IDs for Metformina and Diabetes
-    SELECT id INTO v_drug_id FROM pharma.drug WHERE name = 'Metformina' LIMIT 1;
-    SELECT id INTO v_pathology_id FROM pharma.pathology WHERE name = 'Diabetes Tipo 2' LIMIT 1;
-    INSERT INTO pharma.drug_pathology (drug_id, pathology_id)
-    VALUES (v_drug_id, v_pathology_id);
-
-    -- Continue for other relationships...
-END $$;
+--
+-- -- Link drugs with pathologies (you'll need to get the actual UUIDs)
+-- DO $$
+-- DECLARE
+--     v_drug_id UUID;
+--     v_pathology_id UUID;
+-- BEGIN
+--     -- Get IDs for Losartán and Hipertensión
+--     SELECT id INTO v_drug_id FROM pharma.drug WHERE name = 'Losartán' LIMIT 1;
+--     SELECT id INTO v_pathology_id FROM pharma.pathology WHERE name = 'Hipertensión' LIMIT 1;
+--     INSERT INTO pharma.drug_pathology (drug_id, pathology_id)
+--     VALUES (v_drug_id, v_pathology_id);
+--
+--     -- Get IDs for Metformina and Diabetes
+--     SELECT id INTO v_drug_id FROM pharma.drug WHERE name = 'Metformina' LIMIT 1;
+--     SELECT id INTO v_pathology_id FROM pharma.pathology WHERE name = 'Diabetes Tipo 2' LIMIT 1;
+--     INSERT INTO pharma.drug_pathology (drug_id, pathology_id)
+--     VALUES (v_drug_id, v_pathology_id);
+--
+--     -- Continue for other relationships...
+-- END $$;

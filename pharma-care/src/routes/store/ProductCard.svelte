@@ -31,6 +31,9 @@
     );
 
     const initials = $derived(product.product_name.split(' ').map((word: string) => word[0]).join(''));
+
+    // todo: Check if the ifPharmaProduct is necessary...
+    // I mean, I think it can be inferred from the product.pharmaDetails...
     const isPharmaProduct = $derived(!!product.pharmaDetails);
 
     // on mount print the product
@@ -52,6 +55,7 @@
             
             <div class="flex-1">
                 <h2 class="card-title text-lg">
+
                     {#if isPharmaProduct}
                         <Pill class="w-4 h-4 text-primary" />
                         {product.pharmaDetails.drug_name} {currentConcentration()}

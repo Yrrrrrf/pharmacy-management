@@ -204,38 +204,202 @@ $$ LANGUAGE plpgsql;
  * @param p_pathology_names - Array of pathology names to link
  * @returns UUID of the created drug
  */
-CREATE OR REPLACE FUNCTION pharma.create_complete_drug(
+
+
+
+
+-- Drop the old type if it exists
+DROP TYPE IF EXISTS pharma.pharma_product_variation CASCADE;
+
+-- Create the new composite type with the price field
+CREATE TYPE pharma.pharma_product_variation AS (
+    form_name VARCHAR(255),
+    concentration VARCHAR(255),
+    unit_price NUMERIC(10,2)
+);
+
+
+
+-- First, let's fix the create_drug function
+CREATE OR REPLACE FUNCTION pharma.create_drug(
+    p_id UUID,
+    p_name VARCHAR(255),
+    p_type pharma.drug_type,
+    p_nature pharma.drug_nature,
+    p_commercialization pharma.commercialization
+) RETURNS UUID AS $$
+DECLARE
+    v_drug_id UUID;
+BEGIN
+    INSERT INTO pharma.drug (id, name, type, nature, commercialization)
+    VALUES (p_id, p_name, p_type, p_nature, p_commercialization)
+    RETURNING id INTO v_drug_id;
+
+    RAISE NOTICE 'Drug % successfully created/updated with ID: %', p_name, v_drug_id;
+    RETURN v_drug_id;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Now fix the create_pharma_product function
+CREATE OR REPLACE FUNCTION pharma.create_pharma_product(
     p_name VARCHAR(255),
     p_type pharma.drug_type,
     p_nature pharma.drug_nature,
     p_commercialization pharma.commercialization,
-    p_variations pharma.pharma_variation[],
+    p_variations pharma.pharma_product_variation[],
     p_pathology_names VARCHAR[] DEFAULT NULL
-) RETURNS UUID AS $$
+) RETURNS SETOF UUID AS $$
 DECLARE
     v_drug_id UUID;
+    v_variation pharma.pharma_product_variation;
+    v_form_id UUID;
+    v_form_code VARCHAR(4);
+    v_pharmaceutical_id UUID;
+    v_product_id UUID;
+    v_category_id UUID;
+    v_sku TEXT;
+    v_full_name TEXT;
+    v_description TEXT;
     v_pathology_ids UUID[];
 BEGIN
-    -- Create drug with variations
-    v_drug_id := pharma.create_drug_with_variations(
+    -- Generate a new UUID for the drug
+    v_drug_id := gen_random_uuid();
+
+    -- Create the base drug with the generated UUID
+    v_drug_id := pharma.create_drug(
+        v_drug_id,  -- Pass the generated UUID
         p_name,
         p_type,
         p_nature,
-        p_commercialization,
-        p_variations
+        p_commercialization
     );
 
-    -- If pathology names were provided, link them
+    -- Verify drug creation
+    IF v_drug_id IS NULL THEN
+        RAISE EXCEPTION 'Failed to create drug %', p_name;
+    END IF;
+
+    -- Get pathology IDs if names were provided
     IF p_pathology_names IS NOT NULL THEN
         SELECT ARRAY_AGG(id) INTO v_pathology_ids
         FROM pharma.pathology
         WHERE name = ANY(p_pathology_names);
 
+        -- Link pathologies
         IF v_pathology_ids IS NOT NULL THEN
             CALL pharma.link_drug_pathologies(v_drug_id, v_pathology_ids);
         END IF;
     END IF;
 
-    RETURN v_drug_id;
+    -- Get appropriate category based on drug type and commercialization
+    SELECT category_id INTO v_category_id
+    FROM management.categories
+    WHERE name =
+        CASE
+            WHEN p_type = 'Generic' AND p_commercialization < 'III' THEN 'Medicamentos Genéricos'
+            WHEN p_type = 'Patent' THEN 'Medicamentos de Patente'
+            ELSE 'Medicamentos de Prescripción'
+        END;
+
+    IF v_category_id IS NULL THEN
+        RAISE NOTICE 'Category not found, using default category';
+        SELECT category_id INTO v_category_id
+        FROM management.categories
+        WHERE name = 'Medicamentos'
+        LIMIT 1;
+    END IF;
+
+    -- Create each pharmaceutical variation and corresponding product
+    FOREACH v_variation IN ARRAY p_variations
+    LOOP
+        -- Get the form ID and code
+        SELECT id, code INTO v_form_id, v_form_code
+        FROM pharma.form
+        WHERE name = (v_variation).form_name
+        LIMIT 1;
+
+        IF v_form_id IS NULL THEN
+            RAISE EXCEPTION 'Form not found: %', (v_variation).form_name;
+        END IF;
+
+        -- Create pharmaceutical product
+        v_pharmaceutical_id := pharma.create_pharmaceutical(
+            gen_random_uuid(),
+            v_drug_id,
+            v_form_id,
+            (v_variation).concentration
+        );
+
+        -- Generate SKU using the form code from database
+        v_sku := format('PH-%s-%s-%s-%s-%s',
+            -- Drug type (G/P)
+            CASE p_type
+                WHEN 'Generic' THEN 'G'
+                ELSE 'P'
+            END,
+            -- Commercialization level
+            p_commercialization,
+            -- Drug name (first 3 letters)
+            LEFT(UPPER(p_name), 3),
+            -- Form code from database
+            v_form_code,
+            -- Concentration numbers only
+            REGEXP_REPLACE((v_variation).concentration, '[^0-9]', '', 'g')
+        );
+        -- Generate full product name
+        v_full_name := format('%s %s %s',
+            INITCAP(p_name),
+            (v_variation).form_name,
+            (v_variation).concentration
+        );
+
+        -- Generate detailed description
+        v_description := format(
+            '%s %s %s - %s%s. Comercialización tipo %s.%s',
+            CASE p_type
+                WHEN 'Generic' THEN 'Medicamento genérico'
+                ELSE 'Medicamento de patente'
+            END,
+            LOWER((v_variation).form_name),
+            (v_variation).concentration,
+            CASE p_nature
+                WHEN 'Allopathic' THEN 'Tratamiento alopático'
+                ELSE 'Tratamiento homeopático'
+            END,
+            CASE WHEN p_pathology_names IS NOT NULL
+                 THEN format(' para %s', array_to_string(p_pathology_names, ' y '))
+                 ELSE ''
+            END,
+            p_commercialization,
+            CASE WHEN p_commercialization >= 'III'
+                 THEN ' Requiere prescripción médica.'
+                 ELSE ''
+            END
+        );
+
+        -- Create management product
+        INSERT INTO management.products (
+            product_id,
+            pharma_product_id,
+            sku,
+            name,
+            description,
+            unit_price,
+            category_id
+        ) VALUES (
+            gen_random_uuid(),
+            v_pharmaceutical_id,
+            v_sku,
+            v_full_name,
+            v_description,
+            (v_variation).unit_price,
+            v_category_id
+        ) RETURNING product_id INTO v_product_id;
+
+        -- Return the product ID
+        RETURN NEXT v_product_id;
+    END LOOP;
+
+    RETURN;
 END;
 $$ LANGUAGE plpgsql;

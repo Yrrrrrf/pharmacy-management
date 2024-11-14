@@ -5,6 +5,7 @@ import type { ProductWithPharma } from '$lib/stores/products';
 export interface CartItem {
     id: string;
     name: string;
+    sku: string;
     price: number;
     quantity: number;
     isPharma: boolean;
@@ -12,18 +13,17 @@ export interface CartItem {
     product: ProductWithPharma; // Store the full product for reference
 }
 
-// const currentConcentration = $derived(() => {
+// function currentConcentration(product: ProductWithPharma): string {
 //     if (!product.pharmaDetails?.concentrations) return '';
 //     return product.pharmaDetails.concentrations.find(conc => 
 //         product.product_name.includes(conc)
 //     ) || product.pharmaDetails.concentrations[0];
-// // });
+// }
 
 function currentConcentration(product: ProductWithPharma): string {
-    if (!product.pharmaDetails?.concentrations) return '';
-    return product.pharmaDetails.concentrations.find(conc => 
-        product.product_name.includes(conc)
-    ) || product.pharmaDetails.concentrations[0];
+    let c = product.pharmaDetails?.concentration
+    if (!c) return product.pharmaDetails.concentrations[0];
+    return c;
 }
 
 interface CartStore {
@@ -54,7 +54,8 @@ function createCartStore() {
         subscribe,
         addItem: (product: ProductWithPharma) => {
             console.log('Adding to cart:', { id: product.product_id, name: product.product_name });
-            
+            console.log('SKU:', product.sku);
+
             update(state => {
                 const existingItem = state.items.find(item => item.id === product.product_id);
                 
@@ -76,6 +77,7 @@ function createCartStore() {
                     const newItem: CartItem = {
                         id: product.product_id,
                         name: pharma_name,
+                        sku: product.sku,
                         price: Number(product.unit_price),
                         quantity: 1,
                         isPharma: !!product.pharmaDetails,

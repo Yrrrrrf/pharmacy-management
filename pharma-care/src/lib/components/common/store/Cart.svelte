@@ -77,6 +77,8 @@
                                         <h3 class="font-medium truncate pr-2">
                                             {item.name}
                                         </h3>
+                                        {item.sku}
+                                        <!--
                                         <p class="text-sm text-base-content/60 flex items-center gap-1">
                                             {#if item.isPharma}
                                                 <Pill class="h-4 w-4" />
@@ -86,6 +88,7 @@
                                                 Non-Pharmaceutical
                                             {/if}
                                         </p>
+                                        -->
                                     </div>
 
                                     <!-- Quantity Controls -->
