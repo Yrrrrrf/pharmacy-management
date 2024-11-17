@@ -1,16 +1,25 @@
-<!-- src/lib/components/FilterBar.svelte -->
+<!-- src/lib/components/common/store/FilterBar.svelte -->
 <script lang="ts">
     import { slide } from 'svelte/transition';
     import { filterStore } from '$lib/stores/filter';
-    import { Search, Pill, Package, X, SlidersHorizontal } from 'lucide-svelte';
+    import { Search, Pill, Package, X, SlidersHorizontal, BoxIcon } from 'lucide-svelte';
     import { onMount } from 'svelte';
+    import FilterPharma from '$lib/components/common/store/FilterPharma.svelte';
     
     // Local state
     let searchInput = $state('');
     let minPrice = $state(0);
     let maxPrice = $state(1000);
     let isExpanded = $state(false);
+    let showInStock = $state(false);
     let activeFiltersCount = $state(0);
+
+    // Product type selection
+    let productTypes = [
+        { id: 'all', label: 'All Products', icon: Package },
+        { id: 'pharma', label: 'Pharmaceutical', icon: Pill },
+        { id: 'normal', label: 'Regular Items', icon: Package }
+    ];
 
     // Update search with debounce
     let searchTimeout: ReturnType<typeof setTimeout>;
@@ -28,15 +37,16 @@
         updateActiveFiltersCount();
     }
 
-    // Product type selection
-    let productTypes = [
-        { id: 'all', label: 'All Products', icon: Package },
-        { id: 'pharma', label: 'Pharmaceutical', icon: Pill },
-        { id: 'normal', label: 'Regular Items', icon: Package }
-    ];
+    function handleStockFilterChange() {
+        console.log('Stock filter changed');
+        filterStore.setStockFilter(showInStock);
+    }
 
     function selectProductType(type: 'all' | 'pharma' | 'normal') {
         filterStore.setProductType(type);
+        if (type !== 'pharma') {
+            resetPharmaFilters();
+        }
         updateActiveFiltersCount();
     }
 
@@ -45,13 +55,31 @@
         if (searchInput) count++;
         if (minPrice > 0 || maxPrice < 1000) count++;
         if ($filterStore.productType !== 'all') count++;
+        if (showInStock) count++;
+        
+        // Count active pharma filters
+        if ($filterStore.pharma.drugType) count++;
+        if ($filterStore.pharma.drugNature) count++;
+        if ($filterStore.pharma.pathology) count++;
+        if ($filterStore.pharma.effect) count++;
+        if ($filterStore.pharma.commercialization) count++;
+        
         activeFiltersCount = count;
+    }
+
+    function resetPharmaFilters() {
+        filterStore.setPharmaFilter('drugType', null);
+        filterStore.setPharmaFilter('drugNature', null);
+        filterStore.setPharmaFilter('pathology', null);
+        filterStore.setPharmaFilter('effect', null);
+        filterStore.setPharmaFilter('commercialization', null);
     }
 
     function resetFilters() {
         searchInput = '';
         minPrice = 0;
         maxPrice = 1000;
+        showInStock = false;
         filterStore.reset();
         updateActiveFiltersCount();
     }
@@ -103,14 +131,14 @@
                             class="btn btn-sm {$filterStore.productType === id ? 'btn-primary' : 'btn-ghost'}"
                             onclick={() => selectProductType(id as 'all' | 'pharma' | 'normal')}
                         >
-                            <svelte:component this={Icon} class="w-4 h-4" />
+                            <Icon class="w-4 h-4" />
                             {label}
                         </button>
                     {/each}
                 </div>
             </div>
 
-            <!-- Price Range -->
+            <!-- Price Range and Stock Filter -->
             <div class="flex flex-col gap-2">
                 <label class="text-sm font-medium opacity-75">Price Range</label>
                 <div class="flex items-center gap-4">
@@ -132,8 +160,28 @@
                         min={minPrice}
                         placeholder="Max"
                     />
+                    
+                    <div class="divider divider-horizontal"></div>
+                    
+                    <!-- Stock Filter -->
+                    <div class="flex items-center gap-4">
+                        <label class="cursor-pointer label gap-2">
+                            <span class="label-text">Only in stock</span>
+                            <input 
+                                type="checkbox" 
+                                class="checkbox checkbox-primary"
+                                bind:checked={showInStock}
+                                onchange={handleStockFilterChange}
+                            />
+                        </label>
+                    </div>
                 </div>
             </div>
+
+            <!-- Pharmaceutical Filters Component -->
+            {#if $filterStore.productType === 'pharma'}
+                <FilterPharma onFilterChange={updateActiveFiltersCount} />
+            {/if}
 
             <!-- Reset Filters -->
             {#if activeFiltersCount > 0}

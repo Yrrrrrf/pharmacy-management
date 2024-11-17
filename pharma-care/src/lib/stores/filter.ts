@@ -1,62 +1,143 @@
-// src/lib/stores/filterStore.ts
+// src/lib/stores/filter.ts
 import { writable, derived } from 'svelte/store';
-import type { ProductDetails } from './inventory';
+import { inventoryStore, type ProductDetails, type Drug } from './inventory';
 
-export interface PriceRange {
+interface PriceRange {
     min: number;
     max: number;
+}
+
+interface PharmaceuticalFilters {
+    drugType: string | null;
+    drugNature: string | null;
+    pathology: string | null;
+    effect: string | null;
+    commercialization: string | null;
 }
 
 interface FilterState {
     searchQuery: string;
     priceRange: PriceRange;
     productType: 'all' | 'pharma' | 'normal';
+    showInStock: boolean;
+    pharma: PharmaceuticalFilters;
 }
 
-const createFilterStore = () => {
-    const defaultState: FilterState = {
-        searchQuery: '',
-        priceRange: { min: 0, max: 1000 },
-        productType: 'all'
-    };
+const defaultState: FilterState = {
+    searchQuery: '',
+    priceRange: { min: 0, max: 1000 },
+    productType: 'all',
+    showInStock: false,
+    pharma: {
+        drugType: null,
+        drugNature: null,
+        pathology: null,
+        effect: null,
+        commercialization: null,
+    },
+};
 
-    const filterState = writable<FilterState>(defaultState);
+function createFilterStore() {
+    const { subscribe, set, update } = writable<FilterState>(defaultState);
 
     return {
-        subscribe: filterState.subscribe,
-        setSearchQuery: (query: string) => 
-            filterState.update(state => ({ ...state, searchQuery: query })),
-        setPriceRange: (range: PriceRange) => 
-            filterState.update(state => ({ ...state, priceRange: range })),
-        setProductType: (type: 'all' | 'pharma' | 'normal') => 
-            filterState.update(state => ({ ...state, productType: type })),
-        reset: () => filterState.set(defaultState),
+        subscribe,
+        setSearchQuery: (query: string) =>
+            update((state) => ({ ...state, searchQuery: query })),
+        setPriceRange: (range: PriceRange) =>
+            update((state) => ({ ...state, priceRange: range })),
+        setProductType: (type: 'all' | 'pharma' | 'normal') =>
+            update((state) => ({ ...state, productType: type })),
+        setPharmaFilter: (
+            key: keyof PharmaceuticalFilters,
+            value: string | null
+        ) =>
+            update((state) => ({
+                ...state,
+                pharma: { ...state.pharma, [key]: value },
+            })),
+        setStockFilter: (showInStock: boolean) =>
+            update((state) => ({ ...state, showInStock })),
+        reset: () => set(defaultState),
     };
-};
+}
 
 export const filterStore = createFilterStore();
 
-// Separate function to apply filters
-export const createFilteredProductsStore = (products: ProductDetails[]) => {
-    return derived(filterStore, $filters => {
-        return products.filter(product => {
-            // Search query filter
-            const searchMatch = !$filters.searchQuery || 
-                product.product_name.toLowerCase().includes($filters.searchQuery.toLowerCase()) ||
-                product.description?.toLowerCase().includes($filters.searchQuery.toLowerCase()) ||
-                product.sku.toLowerCase().includes($filters.searchQuery.toLowerCase());
+function findDrugForProduct(
+    product: ProductDetails,
+    drugs: Drug[]
+): Drug | undefined {
+    if (!product.pharma_product_id) return undefined;
+    return drugs.find((drug) =>
+        drug.variants.some((variant) => variant.id === product.pharma_product_id)
+    );
+}
 
-            // Price range filter
-            const price = Number(product.unit_price);
-            const priceMatch = price >= $filters.priceRange.min && 
-                             price <= $filters.priceRange.max;
+export function createFilteredProductsStore(products: ProductDetails[]) {
+    return derived(
+        [filterStore, inventoryStore],
+        ([$filters, $inventory]) => {
+            return products.filter((product) => {
+                const searchMatch =
+                    !$filters.searchQuery ||
+                    product.product_name.toLowerCase().includes(
+                        $filters.searchQuery.toLowerCase()
+                    ) ||
+                    (product.description &&
+                        product.description.toLowerCase().includes(
+                            $filters.searchQuery.toLowerCase()
+                        )) ||
+                    product.sku.toLowerCase().includes(
+                        $filters.searchQuery.toLowerCase()
+                    );
 
-            // Product type filter
-            const typeMatch = $filters.productType === 'all' || 
-                ($filters.productType === 'pharma' && product.pharma_product_id) ||
-                ($filters.productType === 'normal' && !product.pharma_product_id);
+                const priceMatch =
+                    Number(product.unit_price) >= $filters.priceRange.min &&
+                    Number(product.unit_price) <= $filters.priceRange.max;
 
-            return searchMatch && priceMatch && typeMatch;
-        });
-    });
-};
+                let typeAndPharmaMatch = true;
+
+                if ($filters.productType === 'pharma') {
+                    if (!product.pharma_product_id) return false;
+                    const drugData = findDrugForProduct(product, $inventory.drugs);
+                    if (!drugData) return false;
+
+                    if (
+                        $filters.pharma.drugType &&
+                        drugData.drug_type !== $filters.pharma.drugType
+                    ) {
+                        return false;
+                    }
+
+                    if (
+                        $filters.pharma.drugNature &&
+                        drugData.drug_nature !== $filters.pharma.drugNature
+                    ) {
+                        return false;
+                    }
+
+                    if (
+                        $filters.pharma.commercialization &&
+                        drugData.commercialization !== $filters.pharma.commercialization
+                    ) {
+                        return false;
+                    }
+
+                    if (
+                        $filters.pharma.pathology &&
+                        !drugData.pathologies.includes($filters.pharma.pathology)
+                    ) {
+                        return false;
+                    }
+                } else if ($filters.productType === 'normal') {
+                    typeAndPharmaMatch = !product.pharma_product_id;
+                }
+
+                const stockMatch = !$filters.showInStock || product.total_stock > 0;
+
+                return searchMatch && priceMatch && typeAndPharmaMatch && stockMatch;
+            });
+        }
+    );
+}
