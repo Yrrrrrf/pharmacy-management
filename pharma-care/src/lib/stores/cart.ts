@@ -26,6 +26,13 @@ function currentConcentration(product: ProductWithPharma): string {
     return c;
 }
 
+export function formatCurrency(amount: number): string {
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'MXN'
+    }).format(amount);
+}
+
 interface CartStore {
     items: CartItem[];
     isOpen: boolean;

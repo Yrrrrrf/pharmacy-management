@@ -2,19 +2,14 @@
 <script lang="ts">
     import { fade, fly, slide } from 'svelte/transition';
     import { ShoppingCart, X, Plus, Minus, Pill, Package } from 'lucide-svelte';
-    import { cartStore, cartTotals } from '$lib/stores/cart';
+    import { cartStore, cartTotals, formatCurrency } from '$lib/stores/cart';
 
     // Access store values
     $: items = $cartStore.items;
     $: isOpen = $cartStore.isOpen;
     $: ({ subtotal, tax, total, totalItems } = $cartTotals);
 
-    // Format currency helper
-    const formatCurrency = (amount: number) => 
-        new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'MXN'
-        }).format(amount);
+
 </script>
 
 <div class="relative">

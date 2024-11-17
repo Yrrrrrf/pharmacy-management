@@ -2,40 +2,82 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import { Search, Loader2 } from 'lucide-svelte';
-    import ProductCard from './ProductCard.svelte';
-    import FilterBar from './FilterBar.svelte';
-    import { productsStore, filteredProducts, getFilterOptions } from '$lib/stores/products';
-    import Cart from '../../lib/components/common/store/Cart.svelte';
+    import ProductCard from '$lib/components/common/store/ProductCard.svelte';
+    import type { ProductDetails } from '$lib/stores/inventory';
+    import { variantDetailsStore, inventoryStore } from '$lib/stores/inventory';
+    import { filterStore, createFilteredProductsStore } from '$lib/stores/filter';
+    import defaultApiClient from '$lib/api/client';
+    import FilterBar from '$lib/components/common/store/FilterBar.svelte';
 
-    async function loadProducts() {
+    // State management using Runes
+    let products = $state<ProductDetails[]>([]);
+    let isLoading = $state(true);
+    let error = $state<string | null>(null);
+
+    // Create filtered products store
+    $effect(() => {
+        filteredProducts = createFilteredProductsStore(products);
+    });
+    let filteredProducts = createFilteredProductsStore([]);
+
+    async function loadAllProducts() {
+        isLoading = true;
+        error = null;
+        
         try {
-            await productsStore.loadProducts();
-        } catch (error) {
-            console.error('Failed to load products:', error);
+            // Load all products
+            const response = await defaultApiClient.request<ProductDetails[]>(
+                '/management/v_product_details'
+            );
+            products = response;
+
+            // Update price range in filter store based on actual product prices
+            const prices = response.map(p => Number(p.unit_price));
+            const minPrice = Math.min(...prices);
+            const maxPrice = Math.max(...prices);
+            filterStore.setPriceRange({ min: minPrice, max: maxPrice });
+
+            // Load drug data for pharmaceutical products
+            await inventoryStore.fetchDrugs();
+
+            // For pharma products, fetch their variant details
+            const pharmaProducts = response.filter(p => p.pharma_product_id !== null);
+            if (pharmaProducts.length > 0) {
+                await Promise.all(
+                    pharmaProducts.map(p => 
+                        p.pharma_product_id && 
+                        variantDetailsStore.fetchVariantDetails(p.pharma_product_id)
+                    )
+                );
+            }
+        } catch (err) {
+            console.error('Failed to load products:', err);
+            error = err instanceof Error ? err.message : 'Failed to load products';
+        } finally {
+            isLoading = false;
         }
     }
 
-    // Get filter options from the store using derived computation
-
-    // Get filter options from the store using derived computation
-    const filterOptions = $derived(getFilterOptions($productsStore.items));
-
+    // Cleanup on unmount
     onMount(() => {
-        loadProducts();
+        loadAllProducts();
+        return () => {
+            variantDetailsStore.reset();
+            filterStore.reset();
+        };
     });
 </script>
 
 <div class="container mx-auto px-4 py-8">
-    <!-- Pass the derived filter options -->
-    <FilterBar options={filterOptions} />
+    <FilterBar />
    
     <!-- Content Section -->
     <section class="mt-8">
-        {#if $productsStore.isLoading}
+        {#if isLoading}
             <div class="flex justify-center items-center min-h-[400px]">
                 <Loader2 class="w-12 h-12 animate-spin text-primary" />
             </div>
-        {:else if $productsStore.error}
+        {:else if error}
             <div class="alert alert-error">
                 <div class="flex-1">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 mx-2" viewBox="0 0 20 20" fill="currentColor">
@@ -43,12 +85,12 @@
                     </svg>
                     <div>
                         <h3 class="font-bold">Error loading products!</h3>
-                        <p class="text-sm">{$productsStore.error}</p>
+                        <p class="text-sm">{error}</p>
                     </div>
                 </div>
                 <button 
                     class="btn btn-sm btn-ghost" 
-                    onclick={() => loadProducts()}
+                    onclick={() => loadAllProducts()}
                 >
                     Retry
                 </button>
@@ -58,7 +100,7 @@
                 <Search class="mx-auto h-12 w-12 text-base-content opacity-20" />
                 <h3 class="mt-2 text-lg font-medium">No products found</h3>
                 <p class="mt-1 text-base-content opacity-60">
-                    Try adjusting your search or filter criteria.
+                    Try adjusting your search or filter criteria
                 </p>
             </div>
         {:else}
@@ -69,7 +111,7 @@
             </div>
             
             <div class="mt-4 text-sm text-base-content opacity-70">
-                Showing {$filteredProducts.length} of {$productsStore.items.length} products
+                Showing {$filteredProducts.length} of {products.length} products
             </div>
         {/if}
     </section>

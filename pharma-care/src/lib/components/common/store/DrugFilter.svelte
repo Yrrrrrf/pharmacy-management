@@ -4,9 +4,7 @@
     import { filters } from '$lib/stores/products';
     import type { FilterOptions } from '$lib/stores/products';
     
-    const { options } = $props<{ 
-        options: FilterOptions
-    }>();
+    const { options } = $props<{ options: FilterOptions }>();
 
     // Filter out 'all' values using a helper function
     function filterOptions<T>(arr: T[]): T[] {

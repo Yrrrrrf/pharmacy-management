@@ -31,4 +31,4 @@ authStore.set({
 });
 
 // Clear auth state (logout)
-// authStore.set({isAuthenticated: false,user: null});
+authStore.set({isAuthenticated: false,user: null});
