@@ -75,11 +75,14 @@
 
         <!-- Middle Section - Details -->
         <div class="space-y-2">
+            <!-- {current stock} -->
+            {product.total_stock}
             {#if isPharmaProduct && drug}
                 <!-- Compact Classification -->
                 <div class="flex flex-wrap gap-2">
                     <span class="h-6 badge badge-sm badge-primary">{drug.drug_type}</span>
                     <span class="h-6 badge badge-sm badge-secondary">{drug.drug_nature}</span>
+                    <!-- <span class="h-6 badge badge-sm badge-secondary">{}</span> -->
                     <span class="h-6 badge badge-sm badge-accent">
                         {drug.commercialization}
                         {#if drug.requires_prescription}•Rx{/if}

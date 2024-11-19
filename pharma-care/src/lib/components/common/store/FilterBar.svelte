@@ -37,11 +37,6 @@
         updateActiveFiltersCount();
     }
 
-    function handleStockFilterChange() {
-        console.log('Stock filter changed');
-        filterStore.setStockFilter(showInStock);
-    }
-
     function selectProductType(type: 'all' | 'pharma' | 'normal') {
         filterStore.setProductType(type);
         if (type !== 'pharma') {
@@ -171,7 +166,7 @@
                                 type="checkbox" 
                                 class="checkbox checkbox-primary"
                                 bind:checked={showInStock}
-                                onchange={handleStockFilterChange}
+                                onchange={() => filterStore.setStockFilter(showInStock)}
                             />
                         </label>
                     </div>

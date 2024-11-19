@@ -55,29 +55,36 @@ COMMENT ON VIEW pharma.v_pharma_details IS
 'Optimized view of pharmaceutical details with direct variant array structure';
 
 
+CREATE OR REPLACE VIEW management.v_product_details AS
+SELECT
+    p.product_id,
+    p.sku,
+    p.name AS product_name,
+    p.description,
+    p.unit_price,
+    p.category_id,
+    p.pharma_product_id,
+    COALESCE(SUM(b.quantity_remaining), 0) AS total_stock,
+    MAX(pd.expiration_date) AS latest_expiration
+FROM
+    management.products p
+    LEFT JOIN management.batches b ON p.product_id = b.product_id
+    LEFT JOIN management.purchase_details pd ON
+        b.product_id = pd.product_id AND
+        b.purchase_detail_id = pd.purchase_id AND
+        b.batch_number = pd.batch_number
+GROUP BY
+    p.product_id,
+    p.sku,
+    p.name,
+    p.description,
+    p.unit_price,
+    p.category_id,
+    p.pharma_product_id;
 
+COMMENT ON VIEW management.v_product_details IS
+'Provides a summary view of products including current stock levels and latest expiration dates.
+Stock levels are calculated from batches and expiration dates are retrieved from purchase details.';
 
-CREATE OR REPLACE VIEW management.v_product_details
-            (product_id, sku, product_name, description, unit_price, category_id, pharma_product_id, total_stock,
-             latest_expiration)
-as
-SELECT p.product_id,
-       p.sku,
-       p.name                                         AS product_name,
-       p.description,
-       p.unit_price,
-       p.category_id,
-       p.pharma_product_id,
-       COALESCE(sum(b.quantity_remaining), 0::bigint) AS total_stock,
-       max(b.expiration_date)                         AS latest_expiration
-FROM management.products p
-         LEFT JOIN management.batches b ON p.product_id = b.product_id
-GROUP BY p.product_id, p.sku, p.name, p.description, p.unit_price, p.category_id, p.pharma_product_id;
-
-comment on view management.v_product_details is 'Base view for product information including stock levels and categorization';
-
-alter table management.v_product_details
-    owner to pharmacy_management_owner;
-
-grant delete, insert, references, select, trigger, truncate, update on management.v_product_details to some_admin;
-
+-- Add an index to improve view performance
+CREATE INDEX IF NOT EXISTS idx_purchase_details_expiration ON management.purchase_details(product_id, expiration_date);

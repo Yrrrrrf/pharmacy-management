@@ -45,16 +45,16 @@
     // Restock handler with product details
     const handleRestock = (details: ProductDetails) => {
         const message = `Restocking ${details.product_name}\n` +
-                       `SKU: ${details.sku}\n` +
-                       `Current Stock: ${details.total_stock}\n` +
-                       `Latest Expiration: ${formatDate(details.latest_expiration)}`;
+                        `SKU: ${details.sku}\n` +
+                        `Current Stock: ${details.total_stock}\n` +
+                        `Latest Expiration: ${formatDate(details.latest_expiration)}`;
         alert(message);
     };
 
-    // Fetch details for all variants on mount
     onMount(() => {
-        for (const variant of variants) {
+        for (const variant of variants) {  // Fetch details for all variants on mount
             variantDetailsStore.fetchVariantDetails(variant.id);
+            console.log(`Fetching details for variant ${variant.id}`);
         }
     });
 </script>

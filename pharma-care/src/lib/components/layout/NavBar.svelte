@@ -89,6 +89,7 @@
         </ul>
 
         <!-- Search -->
+        <!--
         <div class="form-control">
             <div class="relative {isSearchActive ? 'w-64' : 'w-10'} transition-all duration-300">
                 <input
@@ -107,6 +108,7 @@
                 </button>
             </div>
         </div>
+        -->
 
         <!-- Authenticated Content -->
         {#if isAuthenticated}
@@ -145,6 +147,10 @@
                                 }
                             });
                         }}
+                        />
+                        
+                        <!-- 
+
                         onSignup={(data) => {
                             authStore.set({
                                 isAuthenticated: true,
@@ -155,8 +161,10 @@
                                     role: 'staff'
                                 }
                             });
-                        }}
-                    />
+                        }} 
+                            
+                        -->
+
                 </div>
             </div>
         {/if}

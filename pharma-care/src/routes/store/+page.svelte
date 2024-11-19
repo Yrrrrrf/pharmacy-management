@@ -14,6 +14,19 @@
     let isLoading = $state(true);
     let error = $state<string | null>(null);
 
+    // if the product (product.product_id) is not null, then render the ProductCard component with the product prop
+        // {#each $filteredProducts as product (product.product_id)}
+        //             <ProductCard {product} />
+        //         {/each}
+
+    // now same as above but this time check... if the product has some 'variants' then render the ProductCard component with the product prop
+    // i mean, if it has some variants it means that we will see again some product cards with the same product but for a different variant
+    // so, we need to handle this case as well
+    // lets create a fn that will return the product id and the variant-details (all of them) for a given product
+    // and then we will use this fn to render the ProductCard component with the product prop
+    // and we will pass the variant
+    //* there is not getVariants method in the variantDetailsStore so we need to create it
+
     // Create filtered products store
     $effect(() => {
         filteredProducts = createFilteredProductsStore(products);

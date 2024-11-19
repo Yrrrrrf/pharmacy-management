@@ -71,6 +71,7 @@ COMMENT ON COLUMN management.purchases.supplier_id IS 'Reference to the supplier
 COMMENT ON COLUMN management.purchases.purchase_date IS 'Date of the purchase';
 COMMENT ON COLUMN management.purchases.reference IS 'Reference number or code for the purchase';
 
+
 -- Purchase Details
 -- Details of purchases, including batch information for traceability
 CREATE TABLE management.purchase_details (
@@ -79,7 +80,7 @@ CREATE TABLE management.purchase_details (
     quantity INTEGER NOT NULL,
     unit_price NUMERIC(10, 2) NOT NULL,
     expiration_date DATE,
-    batch_number VARCHAR(50),
+    batch_number VARCHAR(50) NOT NULL,
     PRIMARY KEY (purchase_id, product_id, batch_number)
 );
 
@@ -94,20 +95,26 @@ COMMENT ON COLUMN management.purchase_details.batch_number IS 'Batch or lot numb
 -- Tracks individual batches of products for precise inventory management
 CREATE TABLE management.batches (
     batch_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    product_id UUID REFERENCES management.products(product_id),
+    product_id UUID NOT NULL,
+    purchase_detail_id UUID NOT NULL,
     batch_number VARCHAR(50) NOT NULL,
-    expiration_date DATE,
-    quantity_received INTEGER NOT NULL,
     quantity_remaining INTEGER NOT NULL,
-    UNIQUE (product_id, batch_number)
+    FOREIGN KEY (product_id, purchase_detail_id, batch_number)
+        REFERENCES management.purchase_details(product_id, purchase_id, batch_number),
+    UNIQUE (product_id, purchase_detail_id, batch_number)
 );
+
 
 COMMENT ON COLUMN management.batches.batch_id IS 'Unique identifier for the batch';
 COMMENT ON COLUMN management.batches.product_id IS 'Reference to the product';
-COMMENT ON COLUMN management.batches.batch_number IS 'Batch or lot number';
-COMMENT ON COLUMN management.batches.expiration_date IS 'Expiration date of the batch';
-COMMENT ON COLUMN management.batches.quantity_received IS 'Initial quantity received in this batch';
+COMMENT ON COLUMN management.batches.purchase_detail_id IS 'Reference to the purchase detail';
+COMMENT ON COLUMN management.batches.batch_number IS 'Batch or lot number from purchase detail';
 COMMENT ON COLUMN management.batches.quantity_remaining IS 'Current remaining quantity in this batch';
+
+-- Create indexes for better performance
+CREATE INDEX idx_batches_product_id ON management.batches(product_id);
+CREATE INDEX idx_batches_purchase_detail ON management.batches(purchase_detail_id);
+
 
 -- Sales
 -- Records of sales transactions

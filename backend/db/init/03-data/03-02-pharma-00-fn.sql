@@ -403,3 +403,37 @@ BEGIN
     RETURN;
 END;
 $$ LANGUAGE plpgsql;
+
+
+/**
+ * Checks if a product requires a prescription based on its commercialization level
+ * Returns true if prescription is required
+ */
+CREATE OR REPLACE FUNCTION management.product_requires_prescription(
+    p_product_id UUID
+) RETURNS BOOLEAN AS $$
+DECLARE
+    v_requires_prescription BOOLEAN;
+BEGIN
+    SELECT
+        CASE
+            WHEN p.pharma_product_id IS NOT NULL THEN
+                EXISTS(
+                    SELECT 1
+                    FROM pharma.pharmaceutical ph
+                    JOIN pharma.drug d ON d.id = ph.drug_id
+                    WHERE ph.id = p.pharma_product_id
+                    AND d.commercialization >= 'III'
+                )
+            ELSE false
+        END INTO v_requires_prescription
+    FROM management.products p
+    WHERE product_id = p_product_id;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Product with ID % not found', p_product_id;
+    END IF;
+
+    RETURN v_requires_prescription;
+END;
+$$ LANGUAGE plpgsql;
