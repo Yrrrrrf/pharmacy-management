@@ -2,8 +2,11 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import { fly } from 'svelte/transition';
-    import { appName } from '$lib/stores/app';
+    import { appStore, appName } from '$lib/stores/app';
     import Chart from 'chart.js/auto';
+    import { formatCurrency } from '$lib/stores/cart';
+    import { defaultApiClient } from '$lib/api/client'
+
     import { 
         DollarSign,
         Package,
@@ -13,27 +16,52 @@
         Calendar,
         Bell
     } from 'lucide-svelte';
-    
-    let chartCanvas: HTMLCanvasElement;
+
+    let chartCanvas: HTMLCanvasElement = $state(null);
     let chart: Chart;
     
-    // Chart data
-    const chartData = [
-        { date: 'Jan 22', Sales: 2890 },
-        { date: 'Feb 22', Sales: 2756 },
-        { date: 'Mar 22', Sales: 3322 },
-        { date: 'Apr 22', Sales: 3470 },
-        { date: 'May 22', Sales: 3475 },
-        { date: 'Jun 22', Sales: 3129 },
-    ];
+    // State management using Runes
+    let metricsData = $state<{
+        total_sales: number;
+        inventory_items: number;
+        sales_count: number;
+        prescriptions_count: number;
+    } | null>(null);
     
-    // Stats cards data
-    const statsCards = [
-        { title: 'Total Sales', icon: DollarSign, value: '$12,345', color: 'bg-success text-success-content' },
-        { title: 'Inventory Items', icon: Package, value: '1,234', color: 'bg-info text-info-content' },
-        { title: 'Customers', icon: Users, value: '5,678', color: 'bg-secondary text-secondary-content' },
-        { title: 'Prescriptions', icon: Pill, value: '910', color: 'bg-primary text-primary-content' },
-    ];
+    let isLoading = $state(true);
+    let error = $state<string | null>(null);
+
+    // Stats cards configuration
+    const statsCards = $derived([
+        { 
+            title: 'Total Sales', 
+            icon: DollarSign, 
+            value: metricsData ? formatCurrency(metricsData.total_sales) : '—',
+            color: 'bg-success text-success-content',
+            loading: isLoading 
+        },
+        { 
+            title: 'Inventory Items', 
+            icon: Package, 
+            value: metricsData ? metricsData.inventory_items : '—',
+            color: 'bg-info text-info-content',
+            loading: isLoading 
+        },
+        { 
+            title: 'Total Sales', 
+            icon: Users, 
+            value: metricsData ? metricsData.sales_count : '—',
+            color: 'bg-secondary text-secondary-content',
+            loading: isLoading 
+        },
+        { 
+            title: 'Prescriptions', 
+            icon: Pill, 
+            value: metricsData ? metricsData.prescriptions_count : '—',
+            color: 'bg-primary text-primary-content',
+            loading: isLoading 
+        }
+    ]);
     
     // Quick actions
     const quickActions = [
@@ -57,47 +85,126 @@
         { name: 'Rachel Green', role: 'Pharmacy Assistant', avatar: '/placeholder.svg?height=40&width=40' },
     ];
     
+    // Fetch metrics data
+    async function fetchMetrics() {
+        interface DashboardMetrics {
+            total_sales: number;
+            inventory_items: number;
+            sales_count: number;
+            prescriptions_count: number;
+        }
+
+        isLoading = true;
+        error = null;
+
+        try {
+            const data = await defaultApiClient.request<DashboardMetrics>('/analytics/v_dashboard_metrics');
+            console.log('Fetched Metrics Data:', data);
+
+            // Ensure data is assigned properly
+            if (data) {
+                // todo: Modify this and all the overall code to make use of some fn's instead of direct assignment...
+                metricsData = data[0];  // take the first item from the array
+            } else {
+                throw new Error('No data returned from API');
+            }
+        } catch (err) {
+            error = err instanceof Error ? err.message : 'Failed to load metrics';
+            console.error('Error loading metrics:', err);
+        } finally {
+            isLoading = false;
+        }
+    }
+
+    let isLoadingChart = true;
+    let chartError: string | null = null;
+
+    // Chart data placeholder
+    let chartData = {
+        labels: [] as string[], // Dates for the x-axis
+        datasets: [
+            {
+                label: 'Daily Sales',
+                data: [] as number[], // Sales data for the y-axis
+                borderColor: 'rgb(20, 184, 166)',
+                tension: 0.3,
+                fill: false,
+            },
+        ],
+    };
+
+    async function fetchChartData() {
+        isLoadingChart = true;
+        chartError = null;
+
+        try {
+            // Fetch data from the API endpoint for v_daily_sales_summary
+            const response = await defaultApiClient.request<{ date: string; sales: number }[]>('/analytics/v_daily_sales_summary');
+            
+            if (!response || response.length === 0) {
+                throw new Error('No data returned from API');
+            }
+
+            // Transform API data for Chart.js
+            chartData.labels = response.map((item) => item.date); // Extract dates
+            chartData.datasets[0].data = response.map((item) => item.sales); // Extract sales values
+
+            // Update chart if it already exists
+            if (chart) {
+                chart.data.labels = chartData.labels;
+                chart.data.datasets = chartData.datasets;
+                chart.update();
+            }
+        } catch (err) {
+            chartError = err instanceof Error ? err.message : 'Failed to load chart data';
+            console.error('Error loading chart data:', err);
+        } finally {
+            isLoadingChart = false;
+        }
+    }
+
     onMount(() => {
+        fetchMetrics();
+
+        // Optional: Set up polling for real-time updates
+        // const interval = setInterval(fetchMetrics, 60000); // Update every minute
+        // return () => clearInterval(interval);
+
         // Initialize chart
+        fetchChartData();
+
+        // Initialize Chart.js
         const ctx = chartCanvas.getContext('2d');
         if (ctx) {
             chart = new Chart(ctx, {
                 type: 'line',
-                data: {
-                    labels: chartData.map(data => data.date),
-                    datasets: [{
-                        label: 'Monthly Sales',
-                        data: chartData.map(data => data.Sales),
-                        borderColor: 'rgb(20, 184, 166)',
-                        tension: 0.3,
-                        fill: false
-                    }]
-                },
+                data: chartData,
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
-                            display: false
-                        }
+                            display: false,
+                        },
                     },
                     scales: {
                         y: {
                             beginAtZero: true,
                             grid: {
-                                color: 'rgba(0,0,0,0.1)'
-                            }
+                                color: 'rgba(0,0,0,0.1)',
+                            },
                         },
                         x: {
                             grid: {
-                                display: false
-                            }
-                        }
-                    }
-                }
+                                display: false,
+                            },
+                        },
+                    },
+                },
             });
         }
 
+        // Cleanup on component destroy
         return () => {
             if (chart) {
                 chart.destroy();
@@ -110,7 +217,8 @@
     <!-- Header -->
     <header class="mb-8" in:fly={{ y: -20, duration: 500 }}>
         <h1 class="text-4xl font-bold mb-2">{$appName} Dashboard</h1>
-        <p class="text-base-content/80">Welcome back, Dr. Smith. Here's your pharmacy at a glance.</p>
+        <p class="text-base-content/80">Welcome back. Here's your pharmacy at a glance.</p>
+        <!-- <p class="text-base-content/80">Welcome back, {authStore.user.name} Here's your pharmacy at a glance.</p> -->
     </header>
 
     <!-- Stats Cards -->
@@ -153,9 +261,15 @@
         <!-- Sales Chart -->
         <div class="card bg-base-100 shadow-xl" in:fly={{ x: 20, duration: 500 }}>
             <div class="card-body">
-                <h2 class="card-title">Monthly Sales Overview</h2>
+                <h2 class="card-title">Daily Sales Overview</h2>
                 <div class="h-[300px] mt-4">
-                    <canvas bind:this={chartCanvas}></canvas>
+                    {#if isLoadingChart}
+                        <p>Loading chart data...</p>
+                    {:else if chartError}
+                        <p class="text-error">Error: {chartError}</p>
+                    {:else}
+                        <canvas bind:this={chartCanvas}></canvas>
+                    {/if}
                 </div>
             </div>
         </div>

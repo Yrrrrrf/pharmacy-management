@@ -75,8 +75,6 @@
 
         <!-- Middle Section - Details -->
         <div class="space-y-2">
-            <!-- {current stock} -->
-            {product.total_stock}
             {#if isPharmaProduct && drug}
                 <!-- Compact Classification -->
                 <div class="flex flex-wrap gap-2">

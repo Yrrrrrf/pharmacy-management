@@ -45,12 +45,13 @@ db_manager.log_metadata_stats()
 app.include_router(get_metadata_router(db_manager.metadata))  # * add the metadata router
 
 # ? Model Forge ---------------------------------------------------------------------------------
-model_forge: ModelForge = ModelForge(
+model_forge = ModelForge(
     db_manager=db_manager,
     include_schemas=[
         'public', 
         'pharma', 
-        'management'
+        'management',
+        'analytics'
     ],
 )
 model_forge.log_metadata_stats()
@@ -67,7 +68,7 @@ api_forge = APIForge(model_forge=model_forge)
 # * THE ROUTES MUST BE GENERATED AFTER THE MODELS!
 api_forge.gen_table_routes()
 api_forge.gen_view_routes()
-# * Print the routers
+# # # * Print the routers
 [app.include_router(router) for router in api_forge.routers.values()]
 
 print(f"\n\n{bold(app_config.PROJECT_NAME)} on {underline(italic(bold(green("http://localhost:8000/docs"))))}\n\n")

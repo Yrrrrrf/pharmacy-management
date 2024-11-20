@@ -86,6 +86,11 @@ const createAppState = () => {
             isAuthenticated: false,
             user: null,
         })),
+        getUser: () => {
+            const user = localStorage.getItem('user');
+            if (user) {return JSON.parse(user);
+            } return null;
+        },
         // Theme management
         setTheme: (theme: string) => update(state => ({
             ...state,

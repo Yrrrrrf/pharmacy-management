@@ -5,6 +5,7 @@ uvicorn==0.32.0
 fastapi==0.115
 crud-forge==0.3.1
 
-# For testing
-pytest==8.3.2
-requests==2.32.3
+# Testing
+# todo: add some testing module... (removed for now to keep it simple)
+# pytest==8.3.2
+# requests==2.32.3

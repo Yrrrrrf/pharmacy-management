@@ -190,3 +190,18 @@ FROM
 COMMENT ON VIEW management.v_purchase_batches_and_status IS 'Provides a comprehensive history of product purchases,
     batch tracking, and current stock levels. Links purchase details with their corresponding
     batches while tracking stock levels, expiration status, and usage statistics.';
+
+
+-- View for Weekly Sales Summary
+CREATE OR REPLACE VIEW management.v_weekly_sales AS
+SELECT
+    DATE_TRUNC('week', sale_date::date) AS week,
+    SUM(total_amount) AS total_sales,
+    COUNT(s.sale_id) AS total_sales_count,
+    COUNT(p.prescription_id) AS prescription_sales_count
+FROM management.sales s
+LEFT JOIN management.prescriptions p ON s.sale_id = p.sale_id
+GROUP BY DATE_TRUNC('week', sale_date::date)
+ORDER BY week;
+
+SELECT * FROM management.v_weekly_sales;

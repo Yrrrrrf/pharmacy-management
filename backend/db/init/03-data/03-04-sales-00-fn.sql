@@ -6,7 +6,8 @@ CREATE OR REPLACE FUNCTION management.create_sale(
     p_payment_method VARCHAR,
     p_prescriber_name VARCHAR DEFAULT NULL,
     p_prescription_date DATE DEFAULT NULL,
-    p_patient_name VARCHAR DEFAULT NULL
+    p_patient_name VARCHAR DEFAULT NULL,
+    p_sale_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) RETURNS UUID AS $$
 DECLARE
     v_sale_id UUID;
@@ -20,7 +21,7 @@ BEGIN
         payment_method
     ) VALUES (
         gen_random_uuid(),
-        CURRENT_TIMESTAMP,
+        p_sale_date,
         0,  -- Initial total amount, will be updated as items are added
         p_payment_method
     ) RETURNING sale_id INTO v_sale_id;

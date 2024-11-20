@@ -7,7 +7,6 @@ RETURNS UUID AS $$
 DECLARE
     v_sale_id UUID;
     v_requires_prescription BOOLEAN;
-    -- Modified cursor to only select products with stock
     v_product_cursor CURSOR FOR
         SELECT
             p.product_id,
@@ -18,10 +17,9 @@ DECLARE
         FROM management.products p
         LEFT JOIN management.batches b ON b.product_id = p.product_id
         GROUP BY p.product_id, p.name, p.unit_price
-        HAVING COALESCE(SUM(b.quantity_remaining), 0) > 0  -- Only products with stock
+        HAVING COALESCE(SUM(b.quantity_remaining), 0) > 0
         ORDER BY RANDOM();
     v_product_record RECORD;
-    -- Arrays for random data generation
     v_payment_methods VARCHAR[] := ARRAY['CASH', 'CREDIT_CARD', 'DEBIT_CARD', 'TRANSFER'];
     v_doctor_names VARCHAR[] := ARRAY[
         'Dr. García', 'Dr. Rodríguez', 'Dra. López', 'Dr. Martínez',
@@ -36,45 +34,53 @@ DECLARE
     v_max_attempts INTEGER := 5;
     v_attempts INTEGER := 0;
 BEGIN
-    -- Verify that there are products with stock before proceeding
-    PERFORM 1
-    FROM management.products p
-    JOIN management.batches b ON b.product_id = p.product_id
-    WHERE b.quantity_remaining > 0
-    LIMIT 1;
-
-    IF NOT FOUND THEN
-        RAISE EXCEPTION 'No products available in stock';
+    -- Verify provided timestamp
+    IF p_sale_date IS NULL THEN
+        RAISE EXCEPTION 'Sale date cannot be null';
     END IF;
 
     -- Select random payment method
     v_selected_payment := v_payment_methods[1 + floor(random() * array_length(v_payment_methods, 1))];
 
+    -- Create the sale record WITH THE PROVIDED TIMESTAMP
+    INSERT INTO management.sales (
+        sale_id,
+        sale_date,
+        total_amount,
+        payment_method
+    ) VALUES (
+        gen_random_uuid(),
+        p_sale_date,  -- Use the provided timestamp
+        0,
+        v_selected_payment
+    ) RETURNING sale_id INTO v_sale_id;
+
     -- Randomly decide if this will be a prescription sale (20% chance)
     IF random() < 0.2 THEN
-        -- Create sale with prescription
-        v_sale_id := management.create_sale(
-            p_payment_method := v_selected_payment,
-            p_prescriber_name := v_doctor_names[1 + floor(random() * array_length(v_doctor_names, 1))],
-            p_prescription_date := p_sale_date::date,
-            p_patient_name := v_patient_names[1 + floor(random() * array_length(v_patient_names, 1))]
+        -- Create prescription with the same timestamp
+        INSERT INTO management.prescriptions (
+            prescription_id,
+            sale_id,
+            prescriber_name,
+            prescription_date,
+            patient_name
+        ) VALUES (
+            gen_random_uuid(),
+            v_sale_id,
+            v_doctor_names[1 + floor(random() * array_length(v_doctor_names, 1))],
+            p_sale_date::date,  -- Use the provided date
+            v_patient_names[1 + floor(random() * array_length(v_patient_names, 1))]
         );
         v_requires_prescription := true;
     ELSE
-        -- Create regular sale
-        v_sale_id := management.create_sale(v_selected_payment);
         v_requires_prescription := false;
     END IF;
 
-    RAISE NOTICE 'Created sale: % on date: % (Prescription: %)',
-        v_sale_id, p_sale_date, v_requires_prescription;
-
-    -- Add random products to the sale
+    -- Add products to the sale
     OPEN v_product_cursor;
     WHILE v_products_added < FLOOR(RANDOM() * 3 + 1)::INT AND v_attempts < v_max_attempts LOOP
         FETCH v_product_cursor INTO v_product_record;
 
-        -- Exit if no more products available
         IF NOT FOUND THEN
             EXIT;
         END IF;
@@ -86,15 +92,13 @@ BEGIN
         END IF;
 
         BEGIN
-            -- Calculate random quantity (considering available stock)
             DECLARE
                 v_rand_quantity INTEGER;
             BEGIN
-                -- For prescription items, usually 1 or 2 units
+                -- Calculate random quantity
                 IF v_product_record.needs_prescription THEN
                     v_rand_quantity := 1 + floor(random())::INTEGER;
                 ELSE
-                    -- For non-prescription items, 1 to 5 units
                     v_rand_quantity := 1 + floor(random() * 4)::INTEGER;
                 END IF;
 
@@ -102,36 +106,25 @@ BEGIN
                 v_rand_quantity := LEAST(v_rand_quantity, v_product_record.available_stock);
 
                 IF v_rand_quantity > 0 THEN
-                    -- Add sale item
                     PERFORM management.add_sale_item(
                         v_sale_id,
                         v_product_record.product_id,
                         v_rand_quantity
                     );
-
                     v_products_added := v_products_added + 1;
-
-                    RAISE NOTICE 'Added item: % (Quantity: % out of % available) to sale %',
-                        v_product_record.name,
-                        v_rand_quantity,
-                        v_product_record.available_stock,
-                        v_sale_id;
                 END IF;
             END;
         EXCEPTION
             WHEN OTHERS THEN
-                RAISE WARNING 'Error adding product % to sale: %',
-                    v_product_record.name, SQLERRM;
                 v_attempts := v_attempts + 1;
         END;
     END LOOP;
     CLOSE v_product_cursor;
 
-    -- Verify that at least one product was added
+    -- If no products were added, delete the sale
     IF v_products_added = 0 THEN
-        -- If no products were added, roll back the sale
         DELETE FROM management.sales WHERE sale_id = v_sale_id;
-        RAISE EXCEPTION 'Could not add any products to sale';
+        RETURN NULL;
     END IF;
 
     RETURN v_sale_id;
@@ -139,47 +132,54 @@ END;
 $$ LANGUAGE plpgsql;
 
 
+-- * remove all existing sales data before generating new data...
+DELETE FROM management.prescriptions CASCADE;
+DELETE FROM management.sale_items CASCADE;
+DELETE FROM management.sales CASCADE;
+
+
 -- Generate sample sales data for the last 6 months
 DO $$
 DECLARE
-    v_start_date TIMESTAMP := CURRENT_TIMESTAMP - INTERVAL '2 months';
-    v_end_date TIMESTAMP := CURRENT_TIMESTAMP;
-    v_current_date TIMESTAMP;  -- Current date being processed
-    v_sales_for_day INTEGER;  -- Number of sales to generate for the day
-    v_hour INTEGER;  -- Hour of the day for the sale
-    v_sale_time TIMESTAMP;  -- Final sale timestamp
-    v_new_sale_id UUID;  -- Sale ID generated by fn_rand_sale()
+    -- Date declarations
+    v_start_date DATE := CURRENT_DATE - INTERVAL '6 months';
+    v_end_date DATE := CURRENT_DATE - INTERVAL '1 day';
+    v_current_date DATE;
+    v_sales_for_day INTEGER;
+    v_hour INTEGER;
+    v_sale_time TIMESTAMP;
+    v_new_sale_id UUID;
     -- Business parameters
-    v_min_sales_per_day CONSTANT INTEGER := 3;  -- min sales per day
-    v_max_sales_per_day CONSTANT INTEGER := 8;  -- max sales per day
-    v_business_hour_start CONSTANT INTEGER := 9;  -- 9 AM
-    v_business_hour_end CONSTANT INTEGER := 20;   -- 8 PM
-    -- Weekend adjustment factors
+    v_min_sales_per_day CONSTANT INTEGER := 2;
+    v_max_sales_per_day CONSTANT INTEGER := 4;
+    v_business_hour_start CONSTANT INTEGER := 9;
+    v_business_hour_end CONSTANT INTEGER := 20;
     v_weekend_multiplier NUMERIC;
+    -- For verification
+    r RECORD;
 BEGIN
+    -- Start from the first day
     v_current_date := v_start_date;
 
-    WHILE v_current_date <= v_end_date LOOP
-        -- Adjust number of sales based on weekend (more sales on weekends)
+    WHILE v_current_date < v_end_date LOOP
+        -- Adjust for weekends
         v_weekend_multiplier := CASE
-            WHEN EXTRACT(DOW FROM v_current_date) IN (0, 6) THEN 1.5 -- Weekend multiplier
+            WHEN EXTRACT(DOW FROM v_current_date) IN (0, 6) THEN 1.5
             ELSE 1.0
         END;
 
-        -- Calculate number of sales for this day
         v_sales_for_day := FLOOR(
             (v_min_sales_per_day + floor(random() * (v_max_sales_per_day - v_min_sales_per_day + 1))::INTEGER)
             * v_weekend_multiplier
         )::INTEGER;
 
-        RAISE NOTICE 'Generating % sales for %', v_sales_for_day, v_current_date::date;
+        RAISE NOTICE 'Creating % sales for %', v_sales_for_day, v_current_date;
 
-        -- Create sales for this day
         FOR i IN 1..v_sales_for_day LOOP
             BEGIN
-                -- Generate random hour based on typical business patterns
+                -- Generate hour with weighted distribution
                 IF random() < 0.7 THEN
-                    -- 70% of sales during peak hours (11:00-14:00 and 16:00-19:00)
+                    -- Peak hours (11-14 or 16-19)
                     v_hour := CASE
                         WHEN random() < 0.5 THEN
                             11 + floor(random() * 3)::INTEGER  -- Morning peak
@@ -187,45 +187,60 @@ BEGIN
                             16 + floor(random() * 3)::INTEGER  -- Afternoon peak
                     END;
                 ELSE
-                    -- 30% of sales during other business hours
-                    v_hour := v_business_hour_start + floor(random() *
-                        (v_business_hour_end - v_business_hour_start))::INTEGER;
+                    -- Regular hours
+                    v_hour := v_business_hour_start +
+                             floor(random() * (v_business_hour_end - v_business_hour_start))::INTEGER;
                 END IF;
 
-                -- Generate final sale timestamp
+                -- Create timestamp for this specific sale
                 v_sale_time := v_current_date +
-                              (v_hour || ' hours')::INTERVAL +
-                              (floor(random() * 60) || ' minutes')::INTERVAL +
-                              (floor(random() * 60) || ' seconds')::INTERVAL;
+                              make_interval(hours => v_hour) +
+                              make_interval(mins => floor(random() * 60)::int) +
+                              make_interval(secs => floor(random() * 60)::int);
+
+                -- Verify the sale_time is within bounds
+                IF v_sale_time >= (v_end_date + INTERVAL '1 day') THEN
+                    RAISE NOTICE 'Skipping sale creation for time % as it exceeds end date', v_sale_time;
+                    CONTINUE;
+                END IF;
 
                 -- Create the sale
                 v_new_sale_id := management.fn_rand_sale(v_sale_time);
 
-                -- Log success with different detail levels based on sale characteristics
-                IF EXISTS (
-                    SELECT 1 FROM management.prescriptions
-                    WHERE sale_id = v_new_sale_id
-                ) THEN
-                    RAISE NOTICE 'Created prescription sale: % at %', v_new_sale_id, v_sale_time;
-                ELSE
-                    RAISE NOTICE 'Created regular sale: % at %', v_new_sale_id, v_sale_time;
-                END IF;
+                -- Small delay to prevent timestamp collisions
+                PERFORM pg_sleep(0.01);
 
             EXCEPTION
                 WHEN OTHERS THEN
-                    RAISE WARNING 'Error creating sale at %: %', v_sale_time, SQLERRM;
-                    -- Continue with next iteration despite error
+                    RAISE WARNING 'Error creating sale for date % at hour %: %',
+                        v_current_date, v_hour, SQLERRM;
                     CONTINUE;
             END;
-
-            -- Add small delay between sales to prevent exact same timestamps
-            PERFORM pg_sleep(0.01);
         END LOOP;
 
-        v_current_date := v_current_date + INTERVAL '1 day';
+        -- Move to next day
+        v_current_date := v_current_date + 1;
+
+        -- Verify we haven't exceeded the end date
+        IF v_current_date > v_end_date THEN
+            RAISE NOTICE 'Reached end date: %', v_end_date;
+            EXIT;
+        END IF;
     END LOOP;
 
-    -- Final summary
-    RAISE NOTICE 'Completed generating sales from % to %', v_start_date::date, v_end_date::date;
+    -- Final verification query
+    RAISE NOTICE 'Sales distribution by week:';
+    FOR r IN (
+        SELECT
+            DATE_TRUNC('week', sale_date)::date as week,
+            COUNT(*) as count,
+            SUM(total_amount) as total
+        FROM management.sales
+        WHERE sale_date >= v_start_date AND sale_date <= v_end_date
+        GROUP BY DATE_TRUNC('week', sale_date)
+        ORDER BY week
+    ) LOOP
+        RAISE NOTICE 'Week: %, Count: %, Total: %', r.week, r.count, r.total;
+    END LOOP;
 END;
 $$;
