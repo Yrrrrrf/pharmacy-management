@@ -88,46 +88,24 @@
             {/each}
         </ul>
 
-        <!-- Search -->
-        <!--
-        <div class="form-control">
-            <div class="relative {isSearchActive ? 'w-64' : 'w-10'} transition-all duration-300">
-                <input
-                    bind:value={searchQuery}
-                    type="text"
-                    placeholder={isSearchActive ? "Search..." : ""}
-                    onkeydown={handleSearch}
-                    class="input input-bordered input-sm w-full 
-                           {isSearchActive ? 'opacity-100' : 'opacity-0'}"
-                />
-                <button 
-                    class="btn btn-ghost btn-circle btn-sm absolute left-0 top-0"
-                    onclick={() => isSearchActive = !isSearchActive}
-                >
-                    <Search class="w-4 h-4" />
-                </button>
-            </div>
-        </div>
-        -->
-
         <!-- Authenticated Content -->
         {#if isAuthenticated}
             <!-- Notifications -->
-            <div class="dropdown dropdown-end">
-                <button class="btn btn-ghost btn-circle">
-                    <div class="indicator">
-                        <Bell class="w-5 h-5" />
-                        {#if notificationCount > 0}
-                            <span class="badge badge-sm indicator-item">{notificationCount}</span>
-                        {/if}
-                    </div>
-                </button>
-            </div>
+            <!-- <div class="dropdown dropdown-end"> -->
+                <!-- <button class="btn btn-ghost btn-circle"> -->
+                    <!-- <div class="indicator"> -->
+                        <!-- <Bell class="w-5 h-5" /> -->
+                        <!-- {#if notificationCount > 0} -->
+                            <!-- <span class="badge badge-sm indicator-item">{notificationCount}</span> -->
+                        <!-- {/if} -->
+                    <!-- </div> -->
+                <!-- </button> -->
+            <!-- </div> -->
 
             <!-- User Avatar -->
+            <Cart />
             <UserAvatar LogOutIcon={LogOut} />
         {:else}
-            <Cart />
             <!-- Login/Auth Card Dropdown -->
             <div class="dropdown dropdown-end">
                 <button class="btn btn-primary btn-sm">
@@ -150,7 +128,6 @@
                         />
                         
                         <!-- 
-
                         onSignup={(data) => {
                             authStore.set({
                                 isAuthenticated: true,

@@ -93,7 +93,9 @@ function createCartStore() {
                     };
                     return {
                         ...state,
-                        items: [...state.items, newItem],
+                        // todo: Check this to add some 'default' items
+                        // items: [...state.items, newItem],
+                        items: [...state.items],
                         isOpen: true
                     };
                 }

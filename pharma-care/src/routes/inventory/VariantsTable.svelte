@@ -182,9 +182,9 @@
                                 </button>
                                 {#if activeDropdown === details?.product_id}
                                     <ul class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
-                                        <li><a href={`/inventory/products/${details.product_id}`}>View Details</a></li>
-                                        <li><a href={`/inventory/history/${details.product_id}`}>Stock History</a></li>
-                                        <li><a href={`/inventory/orders/${details.product_id}`}>Purchase Orders</a></li>
+                                        <!-- <li><a href={`/inventory/products/${details.product_id}`}>View Details</a></li> -->
+                                        <li><a href={`/inventory/sales/${details.product_id}`}>Stock History</a></li>
+                                        <li><a href={`/inventory/purchases/${details.product_id}`}>Purchase Orders</a></li>
                                     </ul>
                                 {/if}
                             </div>
