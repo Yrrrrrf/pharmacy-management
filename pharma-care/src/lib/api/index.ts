@@ -4,11 +4,10 @@
  * This file exports the API client, schema generator, and dynamically generated CRUD operations.
  */
 
-export { generateCrudOperations, generateApiForSchema } from './crud';
-
 // Dynamically generate and export API operations
 import { generateApiForSchema } from './crud';
 import { generateSchemaTypes } from './schema-generator';
+
 
 export let api: ReturnType<typeof generateApiForSchema>;
 
@@ -16,3 +15,5 @@ export async function initializeApi() {
     const schemaTypes = await generateSchemaTypes();
     api = generateApiForSchema(schemaTypes);
 }
+
+// export { generateCrudOperations, generateApiForSchema } from './crud';

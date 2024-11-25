@@ -1,9 +1,8 @@
 <!-- src/routes/+page.svelte -->
 <script lang="ts">
-    import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
     import { appName } from '$lib/stores/app';  // Add this import
-    import { MapPin, Phone, Mail, ChevronRight } from 'lucide-svelte';
+    import { MapPin, Phone, Mail } from 'lucide-svelte';
 
     // Services data
     const services = [
